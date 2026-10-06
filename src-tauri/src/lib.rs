@@ -51,6 +51,10 @@ pub fn run() {
         .setup(|app| {
             let window = app.get_webview_window("main").unwrap();
 
+            if let Err(error) = services::startup::ensure_auto_start() {
+                eprintln!("[notch] Could not configure auto-start: {error}");
+            }
+
             let mon_res = window.primary_monitor();
             let cur_res = window.current_monitor();
             let app_mon_res = app.primary_monitor();
