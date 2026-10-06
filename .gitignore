@@ -33,3 +33,5 @@ pnpm-debug.log*
 skills/
 MEMORY.md
 ARCHITECTURE.md
+public/
+release/
