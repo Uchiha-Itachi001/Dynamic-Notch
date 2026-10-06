@@ -861,38 +861,7 @@ export const DynamicNotch: React.FC = () => {
               <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
               {renderLightBorder()}{renderNotchBgCover(false)}
               <div className="notch-expanded-settings-card" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
-                {/* Header */}
                 <div className="apple-full-header">
-                  <div
-                    className={`apple-full-status apple-full-status--${isDisconnected ? "offline" : isEthernet ? "ethernet" : "wifi"}`}
-                    title={isDisconnected ? "No Internet" : isEthernet ? "Ethernet Connected" : "Wi-Fi Connected"}
-                  >
-                    <span className="apple-net-icon">
-                      {isDisconnected ? (
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" className="apple-wifi-offline-svg">
-                          <line x1="2" y1="2" x2="22" y2="22" stroke="#ff453a" strokeWidth="2.4" />
-                          <path d="M2.5 8.5C4.8 6.2 7.8 4.8 11 4.2" stroke="rgba(255,69,58,0.7)" />
-                          <path d="M16.5 4.8C18.6 5.8 20.3 7.1 21.5 8.5" stroke="rgba(255,69,58,0.7)" />
-                          <path d="M6 12C7.8 10.2 10 9.2 12.2 8.9" stroke="rgba(255,69,58,0.7)" />
-                          <path d="M15.5 9.8C16.8 10.6 18 11.5 19 12" stroke="rgba(255,69,58,0.7)" />
-                          <circle cx="12" cy="19.2" r="1.3" fill="#ff453a" />
-                        </svg>
-                      ) : isEthernet ? (
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="apple-eth-svg">
-                          <rect x="2" y="3" width="20" height="13" rx="2" />
-                          <path d="M6 16v3M10 16v3M14 16v3M18 16v3" />
-                          <line x1="2" y1="21" x2="22" y2="21" />
-                        </svg>
-                      ) : (
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="apple-wifi-svg">
-                          <path className="apple-wifi-arc apple-wifi-arc--3" d="M2.5 8.5C8 3 16 3 21.5 8.5" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" />
-                          <path className="apple-wifi-arc apple-wifi-arc--2" d="M6 12C9.5 8.5 14.5 8.5 18 12" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" />
-                          <path className="apple-wifi-arc apple-wifi-arc--1" d="M9.5 15.5C11 14 13 14 14.5 15.5" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" />
-                          <circle className="apple-wifi-dot" cx="12" cy="19.2" r="1.3" fill="currentColor" />
-                        </svg>
-                      )}
-                    </span>
-                  </div>
                   <div className="apple-full-actions">
                     {hasMediaSession && (
                       <button
@@ -906,11 +875,17 @@ export const DynamicNotch: React.FC = () => {
                         </svg>
                       </button>
                     )}
+                    <button type="button" className="apple-action-icon apple-settings-action" onClick={() => tauriBridge.openWindowsSettings()} data-tooltip="Settings" aria-label="Settings">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="12" r="3" />
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a2 2 0 0 1 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                      </svg>
+                    </button>
                     <button type="button" className={`apple-action-pill ${expandOnHover ? "apple-action-pill--on" : ""}`}
-                      onClick={() => setExpandOnHover((p) => !p)} title="Hover Expand">
+                      onClick={() => setExpandOnHover((p) => !p)} aria-label="Hover Expand">
                       <span className="apple-action-dot" /><span>HOVER</span>
                     </button>
-                    <button type="button" className="apple-exit-icon" onClick={() => tauriBridge.exitApp()} title="Exit App">
+                    <button type="button" className="apple-exit-icon" onClick={() => tauriBridge.exitApp()} data-tooltip="Exit App" aria-label="Exit App">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M18.36 6.64a9 9 0 1 1-12.73 0" /><line x1="12" y1="2" x2="12" y2="12" />
                       </svg>
@@ -919,7 +894,34 @@ export const DynamicNotch: React.FC = () => {
                 </div>
                 {/* Body: Concentric Rings + Telemetry Cards */}
                 <div className="apple-full-body">
-                  <div className="apple-rings-large-wrap" title={`CPU: ${cpuPct}% | RAM: ${ramPct}%`}>
+                  <div className="apple-rings-large-wrap">
+                    <div className={`apple-full-status apple-full-status--center apple-full-status--${isDisconnected ? "offline" : isEthernet ? "ethernet" : "wifi"}`}>
+                      <span className="apple-net-icon" data-tooltip={isDisconnected ? "No Internet" : isEthernet ? "Ethernet Connected" : "Wi-Fi Connected"} aria-label={isDisconnected ? "No Internet" : isEthernet ? "Ethernet Connected" : "Wi-Fi Connected"}>
+                        {isDisconnected ? (
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" className="apple-wifi-offline-svg">
+                            <line x1="2" y1="2" x2="22" y2="22" stroke="#ff453a" strokeWidth="2.4" />
+                            <path d="M2.5 8.5C4.8 6.2 7.8 4.8 11 4.2" stroke="rgba(255,69,58,0.7)" />
+                            <path d="M16.5 4.8C18.6 5.8 20.3 7.1 21.5 8.5" stroke="rgba(255,69,58,0.7)" />
+                            <path d="M6 12C7.8 10.2 10 9.2 12.2 8.9" stroke="rgba(255,69,58,0.7)" />
+                            <path d="M15.5 9.8C16.8 10.6 18 11.5 19 12" stroke="rgba(255,69,58,0.7)" />
+                            <circle cx="12" cy="19.2" r="1.3" fill="#ff453a" />
+                          </svg>
+                        ) : isEthernet ? (
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="apple-eth-svg">
+                            <rect x="2" y="3" width="20" height="13" rx="2" />
+                            <path d="M6 16v3M10 16v3M14 16v3M18 16v3" />
+                            <line x1="2" y1="21" x2="22" y2="21" />
+                          </svg>
+                        ) : (
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" className="apple-wifi-svg">
+                            <path className="apple-wifi-arc apple-wifi-arc--3" d="M2.5 8.5C8 3 16 3 21.5 8.5" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" />
+                            <path className="apple-wifi-arc apple-wifi-arc--2" d="M6 12C9.5 8.5 14.5 8.5 18 12" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" />
+                            <path className="apple-wifi-arc apple-wifi-arc--1" d="M9.5 15.5C11 14 13 14 14.5 15.5" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" />
+                            <circle className="apple-wifi-dot" cx="12" cy="19.2" r="1.3" fill="currentColor" />
+                          </svg>
+                        )}
+                      </span>
+                    </div>
                     <svg width="78" height="78" viewBox="0 0 78 78" className="apple-rings-large-svg">
                       <defs>
                         <linearGradient id="appleLgRingCpu" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -1100,11 +1102,8 @@ export const DynamicNotch: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Footer */}
+                {false && (
                 <div className="apple-full-footer">
-                  <div className="apple-footer-left">
-                    <span className="apple-footer-dot" /><span>Real-Time Hardware Telemetry</span>
-                  </div>
                   <button type="button" className="apple-settings-link" onClick={() => tauriBridge.openWindowsSettings()} title="Windows Settings">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="3" />
@@ -1113,6 +1112,7 @@ export const DynamicNotch: React.FC = () => {
                     <span>Settings</span>
                   </button>
                 </div>
+                )}
 
               </div>
             </div>

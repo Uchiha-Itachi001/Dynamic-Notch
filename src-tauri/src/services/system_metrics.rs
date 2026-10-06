@@ -1,5 +1,6 @@
 use std::sync::{Mutex, OnceLock};
-use std::time::Instant;
+use std::net::{SocketAddr, TcpStream};
+use std::time::{Duration, Instant};
 use crate::models::types::SystemMetrics;
 use windows::Win32::Foundation::FILETIME;
 use windows::Win32::NetworkManagement::IpHelper::{FreeMibTable, GetIfTable2, GetBestInterface, MIB_IF_TABLE2, MIB_IF_TYPE_LOOPBACK};
@@ -55,6 +56,16 @@ fn format_speed(bytes_per_sec: u64) -> String {
     }
 }
 
+fn has_internet_connection() -> bool {
+    ["1.1.1.1:53", "8.8.8.8:53"].iter().any(|address| {
+        address
+            .parse::<SocketAddr>()
+            .ok()
+            .and_then(|target| TcpStream::connect_timeout(&target, Duration::from_millis(250)).ok())
+            .is_some()
+    })
+}
+
 fn get_network_speeds() -> (u64, u64, String, String, String) {
     let mut p_table: *mut MIB_IF_TABLE2 = std::ptr::null_mut();
     let mut total_in: u64 = 0;
@@ -77,7 +88,7 @@ fn get_network_speeds() -> (u64, u64, String, String, String) {
                 total_in = total_in.saturating_add(row.InOctets);
                 total_out = total_out.saturating_add(row.OutOctets);
 
-                if has_best_if && row.InterfaceIndex == best_if_index {
+                if has_best_if && row.InterfaceIndex == best_if_index && row.OperStatus.0 == 1 {
                     if row.Type == 71 {
                         best_if_type = Some("wifi".to_string());
                     } else if row.Type == 6 {
@@ -100,14 +111,16 @@ fn get_network_speeds() -> (u64, u64, String, String, String) {
         }
     }
 
-    let net_type = if let Some(t) = best_if_type {
-        t
-    } else if has_wifi_up {
-        "wifi".to_string()
-    } else if has_ethernet_up {
-        "ethernet".to_string()
-    } else if total_in > 0 || total_out > 0 {
-        "ethernet".to_string()
+    let net_type = if has_internet_connection() {
+        if let Some(t) = best_if_type {
+            t
+        } else if has_wifi_up {
+            "wifi".to_string()
+        } else if has_ethernet_up {
+            "ethernet".to_string()
+        } else {
+            "disconnected".to_string()
+        }
     } else {
         "disconnected".to_string()
     };
