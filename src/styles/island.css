@@ -1196,7 +1196,7 @@
 .dynamic-notch--ios-active {
   width: 348px;
   height: 148px;
-  padding: 12px 16px 11px;
+  padding: 7px 16px 11px;
   border-bottom-left-radius: 28px;
   border-bottom-right-radius: 28px;
   background: #000000 !important;
@@ -1226,6 +1226,10 @@
 }
 
 .app-settings-card {
+  .dynamic-notch--app-settings .app-settings-card > .apple-full-header,
+  .dynamic-notch--app-settings .app-settings-card > .app-settings-layout {
+    display: none;
+  }
   position: relative;
   z-index: 2;
   display: flex;
@@ -1237,6 +1241,138 @@
   font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
   animation: notchCardContentFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+.settings-console {
+  position: relative;
+  z-index: 2;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: 22px 25px minmax(0, 1fr);
+  gap: 5px;
+  height: 100%;
+  padding: 4px 6px 6px;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  animation: notchCardContentFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.settings-console-topline,
+.settings-console-brand,
+.settings-console-brand > div,
+.settings-console-live,
+.settings-console-tab,
+.settings-console-stage,
+.settings-console-detail,
+.settings-console-choice-row,
+.settings-console-key-row {
+  display: flex;
+  align-items: center;
+}
+
+.settings-console-topline { justify-content: space-between; }
+.settings-console-brand { gap: 6px; }
+.settings-console-mark { display: grid; width: 18px; height: 18px; place-items: center; overflow: hidden; border: 1px solid rgba(48, 209, 88, 0.5); border-radius: 5px; background: rgba(48, 209, 88, 0.12); }
+.settings-console-mark img { width: 14px; height: 14px; object-fit: contain; }
+.settings-console-brand > div { align-items: flex-start; flex-direction: column; gap: 1px; }
+.settings-console-brand strong { color: #fff; font-size: 9px; line-height: 1; }
+.settings-console-brand span { color: rgba(235, 235, 245, 0.35); font-size: 5px; letter-spacing: 0.12em; line-height: 1; }
+.settings-console-live { gap: 3px; color: rgba(48, 209, 88, 0.9); font-size: 6px; font-weight: 750; letter-spacing: 0.08em; }
+.settings-console-live i { width: 4px; height: 4px; border-radius: 50%; background: #30d158; box-shadow: 0 0 5px rgba(48, 209, 88, 0.8); }
+
+.settings-console-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.settings-console-tab { justify-content: center; gap: 4px; min-width: 0; padding: 3px 5px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; background: rgba(255, 255, 255, 0.035); color: rgba(235, 235, 245, 0.45); cursor: pointer; font: inherit; font-size: 7px; font-weight: 650; transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease; }
+.settings-console-tab:hover { border-color: rgba(255, 255, 255, 0.25); color: rgba(255, 255, 255, 0.85); }
+.settings-console-tab--active { border-color: rgba(48, 209, 88, 0.5); background: rgba(48, 209, 88, 0.12); color: #30d158; }
+
+.settings-console-stage { min-width: 0; gap: 8px; padding: 6px 8px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 9px; background: linear-gradient(135deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.025)); box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06); }
+.settings-console-stage { box-sizing: border-box; min-height: 0; overflow: hidden; }
+.settings-console-stage-icon { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; border-radius: 8px; color: #30d158; background: rgba(48, 209, 88, 0.12); }
+.settings-console-stage-icon--appearance { color: #ff9f0a; background: rgba(255, 159, 10, 0.12); }
+.settings-console-stage-icon--peek { color: #0a84ff; background: rgba(10, 132, 255, 0.12); }
+.settings-console-detail { justify-content: space-between; min-width: 0; flex: 1; }
+.settings-console-detail--wide { align-items: flex-start; flex-direction: column; gap: 5px; }
+.settings-console-detail > div:first-child { display: flex; min-width: 0; flex-direction: column; gap: 2px; }
+.settings-console-kicker { color: rgba(235, 235, 245, 0.4); font-size: 6px; font-weight: 750; letter-spacing: 0.12em; }
+.settings-console-detail strong { overflow: hidden; color: #fff; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.settings-console-detail small { overflow: hidden; color: rgba(235, 235, 245, 0.45); font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
+
+.settings-console-switch { position: relative; width: 27px; height: 16px; flex: 0 0 27px; padding: 2px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.16); cursor: pointer; }
+.settings-console-switch span { display: block; width: 12px; height: 12px; border-radius: 50%; background: rgba(255, 255, 255, 0.82); transition: transform 0.18s ease; }
+.settings-console-switch--on { background: #30d158; }
+.settings-console-switch--on span { transform: translateX(11px); background: #fff; }
+.settings-console-choice-row,
+.settings-console-key-row { width: 100%; gap: 4px; }
+.settings-console-choice-row button,
+.settings-console-key-row button { display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-width: 0; padding: 4px 6px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 5px; background: rgba(255, 255, 255, 0.035); color: rgba(235, 235, 245, 0.55); cursor: pointer; font: inherit; font-size: 7px; }
+.settings-console-choice-row button { flex: 1; }
+.settings-console-key-row button { flex: 1; }
+.settings-console-choice-row button:hover,
+.settings-console-key-row button:hover { color: #fff; border-color: rgba(255, 255, 255, 0.28); }
+.settings-console-choice-row button.settings-console-choice--active,
+.settings-console-key-row button.settings-console-key--active { border-color: rgba(48, 209, 88, 0.65); background: rgba(48, 209, 88, 0.12); color: #30d158; }
+.settings-console-choice-swatch { width: 6px; height: 6px; border-radius: 2px; }
+.settings-console-choice-swatch--black { background: #090a0c; border: 1px solid rgba(255, 255, 255, 0.25); }
+.settings-console-choice-swatch--art { background: linear-gradient(135deg, #ff453a, #bf5af2, #30d158); }
+
+.app-settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 32px minmax(0, 1fr);
+  gap: 6px;
+  min-height: 0;
+  height: 100%;
+}
+
+.app-settings-sidebar {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 3px 0;
+}
+
+.app-settings-sidebar-button {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(235, 235, 245, 0.42);
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.app-settings-sidebar-button:hover,
+.app-settings-sidebar-button--active {
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.app-settings-sidebar-button--active {
+  border-color: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.14);
+  transform: translateY(-1px);
+}
+
+.app-settings-sidebar-button:nth-child(1).app-settings-sidebar-button--active { border-color: rgba(48, 209, 88, 0.7); background: rgba(48, 209, 88, 0.15); color: #30d158; }
+.app-settings-sidebar-button:nth-child(2).app-settings-sidebar-button--active { border-color: rgba(255, 159, 10, 0.7); background: rgba(255, 159, 10, 0.15); color: #ff9f0a; }
+.app-settings-sidebar-button:nth-child(3).app-settings-sidebar-button--active { border-color: rgba(10, 132, 255, 0.7); background: rgba(10, 132, 255, 0.15); color: #0a84ff; }
+
+.app-settings-content {
+  min-width: 0;
+  overflow: hidden;
+  padding: 4px 0 5px;
+}
+.app-settings-content-heading { display: flex; align-items: baseline; justify-content: space-between; height: 23px; }
+.app-settings-content-heading strong { color: #fff; font-size: 12px; line-height: 1; }
+.app-settings-content-heading span { color: rgba(235, 235, 245, 0.38); font-size: 7px; }
 
 .app-settings-title {
   display: flex;
@@ -1316,11 +1452,11 @@
 .app-settings-row {
   display: flex;
   align-items: center;
-  min-height: 20px;
-  padding: 2px 7px 2px 5px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.045);
+  min-height: 42px;
+  padding: 7px 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 .app-settings-row-icon {
@@ -1337,6 +1473,7 @@
 .app-settings-row-icon--green { background: rgba(48, 209, 88, 0.14); color: #30d158; }
 .app-settings-row-icon--blue { background: rgba(10, 132, 255, 0.14); color: #0a84ff; }
 .app-settings-row-icon--cyan { background: rgba(56, 189, 248, 0.14); color: #38bdf8; }
+.app-settings-row-icon--violet { background: rgba(191, 90, 242, 0.14); color: #bf5af2; }
 
 .app-settings-row-copy {
   display: flex;
@@ -1386,6 +1523,54 @@
 
 .app-settings-toggle--on { background: #30d158; }
 .app-settings-toggle--on span { transform: translateX(11px); background: #ffffff; }
+
+.app-settings-segmented {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.app-settings-segmented button {
+  padding: 4px 5px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: rgba(235, 235, 245, 0.42);
+  cursor: pointer;
+  font: inherit;
+  font-size: 7px;
+  font-weight: 650;
+}
+
+.app-settings-segmented button:hover { color: rgba(255, 255, 255, 0.82); }
+.app-settings-segmented .app-settings-segmented--active { background: rgba(48, 209, 88, 0.18); color: #30d158; }
+
+.app-settings-appearance-section { display: flex; flex-direction: column; gap: 8px; }
+.app-settings-appearance-heading { display: flex; flex-direction: column; gap: 2px; }
+.app-settings-appearance-heading strong { color: rgba(255, 255, 255, 0.88); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.app-settings-appearance-heading span { color: rgba(235, 235, 245, 0.4); font-size: 7px; }
+.app-settings-appearance-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.app-settings-appearance-card { display: flex; min-height: 58px; flex-direction: column; align-items: flex-start; gap: 4px; padding: 7px 9px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 9px; background: rgba(255, 255, 255, 0.035); color: rgba(255, 255, 255, 0.86); cursor: pointer; text-align: left; transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease; }
+.app-settings-appearance-card:hover { border-color: rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.07); transform: translateY(-1px); }
+.app-settings-appearance-card--active { border-color: rgba(48, 209, 88, 0.9); background: rgba(48, 209, 88, 0.08); box-shadow: 0 0 14px rgba(48, 209, 88, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.08); }
+.app-settings-appearance-card-top { display: flex; width: 100%; align-items: center; justify-content: space-between; }
+.app-settings-appearance-card-top strong { font-size: 10px; font-weight: 700; }
+.app-settings-appearance-card--active .app-settings-appearance-card-top svg { color: #30d158; }
+.app-settings-appearance-badge { display: inline-flex; align-items: center; gap: 3px; padding: 3px 5px; border-radius: 4px; background: rgba(48, 209, 88, 0.12); color: #30d158; font-size: 7px; font-weight: 650; }
+.app-settings-appearance-description { color: rgba(235, 235, 245, 0.48); font-size: 7px; line-height: 1.15; }
+
+.app-settings-peek-section { display: flex; flex-direction: column; gap: 6px; }
+.app-settings-peek-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
+.app-settings-peek-card { display: flex; min-height: 42px; flex-direction: column; align-items: flex-start; gap: 3px; padding: 6px 7px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; background: rgba(255, 255, 255, 0.035); color: rgba(255, 255, 255, 0.86); cursor: pointer; text-align: left; transition: border-color 0.16s ease, background 0.16s ease, transform 0.16s ease; }
+.app-settings-peek-card:hover { border-color: rgba(255, 255, 255, 0.25); background: rgba(255, 255, 255, 0.07); transform: translateY(-1px); }
+.app-settings-peek-card--active { border-color: rgba(48, 209, 88, 0.85); background: rgba(48, 209, 88, 0.08); }
+.app-settings-peek-card strong { font-size: 9px; }
+.app-settings-peek-card span { padding: 2px 4px; border-radius: 3px; background: rgba(48, 209, 88, 0.12); color: #30d158; font-size: 7px; }
+.app-settings-peek-card small { color: rgba(235, 235, 245, 0.4); font-size: 6px; line-height: 1.15; }
 
 .app-settings-section-label + .app-settings-list + .app-settings-section-label {
   margin-top: 6px;

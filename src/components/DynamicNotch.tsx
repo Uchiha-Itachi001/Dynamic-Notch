@@ -9,6 +9,7 @@ import { tauriBridge } from "../services/tauriBridge";
 import { calcNetPercent, formatBytes, formatRate, formatTime, getBatteryColor, getTrackColor } from "../services/notchFormatters";
 import { NotchOsd } from "./NotchOsd";
 import { CalendarPanel } from "./CalendarPanel";
+import { SettingsPanel } from "./SettingsPanel";
 
 /* ─── Priority ordering for OSD states ──────────────────────────────────────
    Higher priority states take over the notch, lower ones queue/dismiss.
@@ -18,7 +19,13 @@ import { CalendarPanel } from "./CalendarPanel";
 
 export const DynamicNotch: React.FC = () => {
   const showBattery = true;
-  const mediaBgMode = "cover";
+  const [mediaBgMode, setMediaBgMode] = useState<"black" | "cover">(() => {
+    try {
+      return localStorage.getItem("notch_media_background") === "cover" ? "cover" : "black";
+    } catch {
+      return "black";
+    }
+  });
 
   const systemMetrics = useSystemMetrics(true);
   const batteryPercent = systemMetrics?.battery_percent ?? 100;
@@ -94,14 +101,27 @@ export const DynamicNotch: React.FC = () => {
       return true;
     }
   });
-  const [smoothTransitions, setSmoothTransitions] = useState(true);
-  const [showNetworkBadge, setShowNetworkBadge] = useState(true);
+  const [peekKey, setPeekKey] = useState<"Shift" | "Control" | " " | "Tab">(() => {
+    try {
+      const saved = localStorage.getItem("notch_peek_key");
+      return saved === "Control" || saved === " " || saved === "Tab" ? saved : "Shift";
+    } catch {
+      return "Shift";
+    }
+  });
 
   useEffect(() => {
     try {
       localStorage.setItem("notch_expand_on_hover", JSON.stringify(expandOnHover));
     } catch {}
   }, [expandOnHover]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("notch_media_background", mediaBgMode);
+      localStorage.setItem("notch_peek_key", peekKey);
+    } catch {}
+  }, [mediaBgMode, peekKey]);
 
   const hoverTimeoutRef = useRef<number | null>(null);
   const collapseTimeoutRef = useRef<number | null>(null);
@@ -190,7 +210,6 @@ export const DynamicNotch: React.FC = () => {
       hoverTimeoutRef.current = window.setTimeout(() => {
         tauriBridge.setNotchExpanded(true);
         if (hasMediaSession) setExpandedType("media");
-        else if (isBtConnected && activeBtDevice !== null) setExpandedType("bluetooth");
         else setExpandedType("settings");
         setIsHoverExpanded(true);
       }, 70);
@@ -293,7 +312,11 @@ export const DynamicNotch: React.FC = () => {
   // ── Keyboard Shortcuts (Media controls & navigation) ───────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Shift") setIsShiftDown(true);
+      if (e.key === peekKey || (peekKey === " " && e.code === "Space")) setIsShiftDown(true);
+      if (e.key === peekKey || (peekKey === " " && e.code === "Space")) {
+        e.preventDefault();
+        return;
+      }
       if (e.key === "Escape") {
         handleCollapse();
         return;
@@ -363,7 +386,7 @@ export const DynamicNotch: React.FC = () => {
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === "Shift") { setIsShiftDown(false); setIsNotchHovered(false); }
+      if (e.key === peekKey || (peekKey === " " && e.code === "Space")) { setIsShiftDown(false); setIsNotchHovered(false); }
     };
 
     const handleBlur = () => { setIsShiftDown(false); setIsNotchHovered(false); };
@@ -377,7 +400,7 @@ export const DynamicNotch: React.FC = () => {
       window.removeEventListener("keyup", handleKeyUp);
       window.removeEventListener("blur", handleBlur);
     };
-  }, [hasMediaSession, handleTogglePlay, handleNextTrack, handlePrevTrack, triggerVolumeStep, toggleMute, seekTrack, activeDuration, activeCurrentSec]);
+  }, [hasMediaSession, handleTogglePlay, handleNextTrack, handlePrevTrack, triggerVolumeStep, toggleMute, seekTrack, activeDuration, activeCurrentSec, peekKey]);
 
   // ── Theme helpers ─────────────────────────────────────────────────────────
   const fallbackTheme = getTrackColor(activeTitle, activeArtist);
@@ -650,26 +673,14 @@ export const DynamicNotch: React.FC = () => {
                 </div>
               </div>
 
-              <div className="app-settings-title"><strong>Settings</strong><span>Shape your notch</span></div>
-              <div className="app-settings-section-label">Interface</div>
-              <div className="app-settings-list">
-                <div className="app-settings-row">
-                  <div className="app-settings-row-icon app-settings-row-icon--green">↗</div>
-                  <div className="app-settings-row-copy"><strong>Expand on hover</strong><span>Open the notch when your pointer arrives</span></div>
-                  <button type="button" className={`app-settings-toggle ${expandOnHover ? "app-settings-toggle--on" : ""}`} onClick={() => setExpandOnHover((value) => !value)} aria-pressed={expandOnHover} aria-label="Toggle expand on hover"><span /></button>
-                </div>
-                <div className="app-settings-row">
-                  <div className="app-settings-row-icon app-settings-row-icon--blue">✦</div>
-                  <div className="app-settings-row-copy"><strong>Smooth transitions</strong><span>Keep state changes soft and fluid</span></div>
-                  <button type="button" className={`app-settings-toggle ${smoothTransitions ? "app-settings-toggle--on" : ""}`} onClick={() => setSmoothTransitions((value) => !value)} aria-pressed={smoothTransitions} aria-label="Toggle smooth transitions"><span /></button>
-                </div>
-                <div className="app-settings-row">
-                  <div className="app-settings-row-icon app-settings-row-icon--cyan">◉</div>
-                  <div className="app-settings-row-copy"><strong>Network badge</strong><span>Show connection state in the ring center</span></div>
-                  <button type="button" className={`app-settings-toggle ${showNetworkBadge ? "app-settings-toggle--on" : ""}`} onClick={() => setShowNetworkBadge((value) => !value)} aria-pressed={showNetworkBadge} aria-label="Toggle network badge"><span /></button>
-                </div>
-              </div>
-
+              <SettingsPanel
+                expandOnHover={expandOnHover}
+                onExpandOnHoverChange={() => setExpandOnHover((value) => !value)}
+                mediaBgMode={mediaBgMode}
+                onMediaBgModeChange={setMediaBgMode}
+                peekKey={peekKey}
+                onPeekKeyChange={setPeekKey}
+              />
             </div>
           </div>
         )}
