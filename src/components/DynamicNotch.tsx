@@ -5,6 +5,8 @@ import { useBluetooth } from "../hooks/useBluetooth";
 import { useOSDEvents } from "../hooks/useOSDEvents";
 import { useSystemEvents } from "../hooks/useSystemEvents";
 import { tauriBridge } from "../services/tauriBridge";
+import { calcNetPercent, formatBytes, formatRate, formatTime, getBatteryColor, getTrackColor } from "../services/notchFormatters";
+import { NotchOsd } from "./NotchOsd";
 
 /* ─── Priority ordering for OSD states ──────────────────────────────────────
    Higher priority states take over the notch, lower ones queue/dismiss.
@@ -123,24 +125,6 @@ export const DynamicNotch: React.FC = () => {
 
   const activeTitle = liveMedia?.title?.trim() || (hasLiveMedia ? "Connecting Audio..." : "No Media Playing");
   const activeArtist = liveMedia?.artist?.trim() || (hasLiveMedia ? "Resolving Stream..." : "Ready to play");
-
-  const formatTime = (secs: number) => {
-    if (typeof secs !== "number" || isNaN(secs) || secs < 0) return "0:00";
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
-    return `${m}:${s < 10 ? "0" : ""}${s}`;
-  };
-
-  const formatBytes = (bytes: number) => {
-    if (bytes >= 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
-    if (bytes >= 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    if (bytes >= 1024) return `${Math.round(bytes / 1024)} KB`;
-    return `${bytes} B`;
-  };
-
-  const formatRate = (bytesPerSecond: number) => `${formatBytes(bytesPerSecond)}/s`;
-
-
 
   // ── Expand/Collapse handlers ──────────────────────────────────────────────
   const handleExpandMedia = (e?: React.MouseEvent) => {
@@ -394,22 +378,6 @@ export const DynamicNotch: React.FC = () => {
   }, [hasMediaSession, handleTogglePlay, handleNextTrack, handlePrevTrack, triggerVolumeStep, toggleMute, seekTrack, activeDuration, activeCurrentSec]);
 
   // ── Theme helpers ─────────────────────────────────────────────────────────
-  const getTrackColor = (title: string, artist: string) => {
-    let hash = 0;
-    const str = `${title}__${artist}`;
-    for (let i = 0; i < str.length; i++) { hash = (hash << 5) - hash + str.charCodeAt(i); hash |= 0; }
-    const hue = Math.abs(hash) % 360;
-    const topColor = `hsl(${hue}, 90%, 82%)`;
-    const botColor = `hsl(${hue}, 85%, 46%)`;
-    return {
-      waveColor: `hsl(${hue}, 88%, 58%)`,
-      waveGradient: `linear-gradient(180deg, ${topColor} 0%, ${botColor} 100%)`,
-      waveGradientTop: topColor,
-      waveGradientBottom: botColor,
-      glowColor: `hsla(${hue}, 88%, 58%, 0.45)`,
-    };
-  };
-
   const fallbackTheme = getTrackColor(activeTitle, activeArtist);
   const trackTheme = {
     waveColor: dynamicTheme?.waveColor || fallbackTheme.waveColor,
@@ -417,13 +385,6 @@ export const DynamicNotch: React.FC = () => {
     waveGradientTop: dynamicTheme?.waveGradientTop || fallbackTheme.waveGradientTop,
     waveGradientBottom: dynamicTheme?.waveGradientBottom || fallbackTheme.waveGradientBottom,
     glowColor: dynamicTheme?.glowColor || fallbackTheme.glowColor,
-  };
-
-  const getBatteryColor = (pct: number, charging: boolean) => {
-    if (charging) return "#22c55e";
-    if (pct <= 25) return "#ef4444";
-    if (pct <= 75) return "#f59e0b";
-    return "#22c55e";
   };
 
   // ── Shared sub-renders ────────────────────────────────────────────────────
@@ -512,12 +473,6 @@ export const DynamicNotch: React.FC = () => {
   const ramPct = Math.min(100, Math.max(0, Math.round(systemMetrics?.ram_percent ?? 45)));
   const usedRamGb = ((systemMetrics?.used_ram_mb ?? 5529) / 1024).toFixed(1);
 
-  const calcNetPercent = (bps: number) => {
-    if (!bps || bps <= 0) return 0;
-    const logVal = Math.log10(Math.max(1, bps));
-    const minLog = 2.0; const maxLog = 7.7;
-    return Math.min(100, Math.max(8, Math.round(((logVal - minLog) / (maxLog - minLog)) * 100)));
-  };
   const dlPct = calcNetPercent(systemMetrics?.net_recv_speed_bps ?? 388000);
   const ulPct = calcNetPercent(systemMetrics?.net_sent_speed_bps ?? 9200);
 
@@ -556,224 +511,19 @@ export const DynamicNotch: React.FC = () => {
         onWheel={expandedType === "app-settings" ? undefined : handleWheel}
       >
 
-        {/* ════════════════════════════════════════════════════════════════════
-            OSD STATES — Transient system events (highest priority)
-            ════════════════════════════════════════════════════════════════════ */}
-
-        {/* ── OSD: Incoming Call ── */}
-        {showingOSD && activeOSD === "call_incoming" && osd.call && (
-          <div className="dynamic-notch dynamic-notch--osd dynamic-notch--call"
-            onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-            <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
-            {renderLightBorder()}
-            <div className="osd-call-layout">
-              <div className="osd-call-avatar">{osd.call.callerInitial}</div>
-              <div className="osd-call-info">
-                <span className="osd-call-name">{osd.call.callerName}</span>
-                <span className="osd-call-sub">Incoming Call...</span>
-              </div>
-              <div className="osd-call-actions">
-                <button className="osd-call-btn osd-call-btn--decline" onClick={dismissCall} title="Decline">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M20.4 13.5c-1.2 0-2.4-.2-3.5-.6-.5-.2-1.1 0-1.4.4l-2.2 2.7c-2.7-1.3-5-3.5-6.3-6.3l2.7-2.2c.4-.3.6-.9.4-1.4C9.8 5 9.6 3.8 9.6 2.5c0-.8-.7-1.5-1.5-1.5H3.5C2.7 1 2 1.7 2 2.5 2 13.3 10.7 22 21.5 22c.8 0 1.5-.7 1.5-1.5V15c0-.8-.7-1.5-1.6-1.5z" transform="rotate(135 12 12)" />
-                  </svg>
-                </button>
-                <button className="osd-call-btn osd-call-btn--accept" title="Accept">
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                    <path d="M20.4 13.5c-1.2 0-2.4-.2-3.5-.6-.5-.2-1.1 0-1.4.4l-2.2 2.7c-2.7-1.3-5-3.5-6.3-6.3l2.7-2.2c.4-.3.6-.9.4-1.4C9.8 5 9.6 3.8 9.6 2.5c0-.8-.7-1.5-1.5-1.5H3.5C2.7 1 2 1.7 2 2.5 2 13.3 10.7 22 21.5 22c.8 0 1.5-.7 1.5-1.5V15c0-.8-.7-1.5-1.6-1.5z" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── OSD: Camera In Use ── */}
-        {showingOSD && activeOSD === "camera" && (
-          <div className="dynamic-notch dynamic-notch--osd dynamic-notch--camera"
-            onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-            <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
-            {renderLightBorder()}
-            <div className="osd-status-layout">
-              <div className="osd-status-icon osd-status-icon--camera">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
-                </svg>
-              </div>
-              <div className="osd-status-text">
-                <span className="osd-status-label">Camera</span>
-                <span className="osd-status-sub osd-status-sub--green">In Use</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── OSD: Microphone Muted ── */}
-        {showingOSD && activeOSD === "mic_muted" && (
-          <div className="dynamic-notch dynamic-notch--osd dynamic-notch--mic"
-            onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-            <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
-            {renderLightBorder()}
-            <div className="osd-status-layout">
-              <div className="osd-status-icon osd-status-icon--mic">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                  <path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" />
-                  <path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" />
-                  <line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" />
-                </svg>
-              </div>
-              <div className="osd-status-text">
-                <span className="osd-status-label">Microphone</span>
-                <span className="osd-status-sub osd-status-sub--red">Muted</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── OSD: Do Not Disturb ── */}
-        {showingOSD && activeOSD === "dnd" && (
-          <div className="dynamic-notch dynamic-notch--osd dynamic-notch--dnd"
-            onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-            <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
-            {renderLightBorder()}
-            <div className="osd-status-layout">
-              <div className="osd-status-icon osd-status-icon--dnd">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                  <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" />
-                </svg>
-              </div>
-              <div className="osd-status-text">
-                <span className="osd-status-label">Do Not Disturb</span>
-                <span className={`osd-status-sub ${osd.dndEnabled ? "osd-status-sub--blue" : "osd-status-sub--dim"}`}>
-                  {osd.dndEnabled ? "On" : "Off"}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-
-
-        {/* ── OSD: Timer ── */}
-        {showingOSD && activeOSD === "timer" && osd.timer && (
-          <div className="dynamic-notch dynamic-notch--osd dynamic-notch--timer"
-            onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-            <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
-            {renderLightBorder()}
-            <div className="osd-timer-layout">
-              <div className="osd-timer-icon">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-                  <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M12 8v4l3 3" />
-                </svg>
-              </div>
-              <span className="osd-timer-value">{formatTimer(osd.timer.remainingSec)}</span>
-              <div className="osd-timer-actions">
-                <button className="osd-rec-btn" onClick={pauseResumeTimer} title={osd.timer.running ? "Pause" : "Resume"}>
-                  {osd.timer.running ? (
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-                      <rect x="6" y="4" width="4" height="16" rx="1" /><rect x="14" y="4" width="4" height="16" rx="1" />
-                    </svg>
-                  ) : (
-                    <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
-                      <polygon points="5 3 19 12 5 21 5 3" />
-                    </svg>
-                  )}
-                </button>
-                <button className="osd-rec-btn" onClick={cancelTimer} title="Cancel">
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── OSD: Download ── */}
-        {showingOSD && activeOSD === "download" && osd.download && (
-          <div className="dynamic-notch dynamic-notch--osd dynamic-notch--download"
-            onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-            <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
-            {renderLightBorder()}
-            <div className="osd-download-layout">
-              <div className="osd-dl-icon">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#38bdf8" strokeWidth="2.2" strokeLinecap="round">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-              </div>
-              <div className="osd-dl-info">
-                <span className="osd-dl-filename">{osd.download.filename}</span>
-                <div className="osd-dl-track">
-                  {osd.download.totalBytes && osd.download.totalBytes > 0 ? (
-                    <div className="osd-dl-fill" style={{ width: `${Math.min(100, Math.round((osd.download.downloadedBytes / osd.download.totalBytes) * 100))}%` }} />
-                  ) : (
-                    <div className="osd-dl-fill osd-dl-fill--indeterminate" />
-                  )}
-                </div>
-                <span className="osd-dl-meta">
-                  {formatBytes(osd.download.downloadedBytes)}
-                  {osd.download.totalBytes ? ` / ${formatBytes(osd.download.totalBytes)}` : ""}
-                  {" · "}{osd.download.paused ? "Waiting for data" : formatRate(osd.download.speedBps)}
-                </span>
-              </div>
-              <div className="osd-dl-pct">
-                {osd.download.totalBytes && osd.download.totalBytes > 0
-                  ? `${Math.min(100, Math.round((osd.download.downloadedBytes / osd.download.totalBytes) * 100))}%`
-                  : "LIVE"}
-              </div>
-              <div className="osd-dl-actions">
-                <button className="osd-rec-btn" onClick={dismissDownload} title="Dismiss">
-                  <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ── OSD: Notification ── */}
-        {showingOSD && activeOSD === "notification" && osd.notification && (
-          <div className="dynamic-notch dynamic-notch--osd dynamic-notch--notification"
-            onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-            <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
-            {renderLightBorder()}
-            <div className="osd-notif-layout">
-              <div className="osd-notif-app-icon">{osd.notification.appIcon || "💬"}</div>
-              <div className="osd-notif-content">
-                <span className="osd-notif-title">{osd.notification.title}</span>
-                <span className="osd-notif-body">{osd.notification.body}</span>
-              </div>
-              <div className="osd-notif-dot" />
-            </div>
-          </div>
-        )}
-
-
-
-        {/* ── OSD: Brightness ── */}
-        {showingOSD && activeOSD === "brightness" && (
-          <div className="dynamic-notch dynamic-notch--osd dynamic-notch--brightness"
-            onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-            <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
-            {renderLightBorder()}
-            <div className="osd-slider-layout">
-              <div className="osd-slider-icon">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round">
-                  <circle cx="12" cy="12" r="5" />
-                  <line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                  <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                </svg>
-              </div>
-              {renderSliderBar(osd.brightnessPct, "#fbbf24")}
-              <span className="osd-slider-value">{osd.brightnessPct}%</span>
-            </div>
-          </div>
-        )}
+        <NotchOsd
+          osd={osd}
+          showing={showingOSD}
+          renderLightBorder={renderLightBorder}
+          renderSliderBar={renderSliderBar}
+          formatTimer={formatTimer}
+          formatBytes={formatBytes}
+          formatRate={formatRate}
+          dismissCall={dismissCall}
+          pauseResumeTimer={pauseResumeTimer}
+          cancelTimer={cancelTimer}
+          dismissDownload={dismissDownload}
+        />
 
         {/* ════════════════════════════════════════════════════════════════════
             EXPANDED CARDS (persistent, user-invoked)
