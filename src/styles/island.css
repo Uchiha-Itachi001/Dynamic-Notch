@@ -1,0 +1,3774 @@
+/* ─── Authentic DynamicWin V2 Dynamic Notch / Island Design ────────────────── */
+
+.dynamic-notch-wrapper {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  transform-origin: top center !important;
+  z-index: 9990;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  pointer-events: auto;
+  user-select: none;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", Roboto, sans-serif;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Flyout Open: Dynamic Island collapses and slides smoothly up into top bezel */
+.dynamic-notch-wrapper--flyout-open {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transform: translateX(-50%) translateY(-100%) !important;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.dynamic-notch-wrapper--flyout-open .dynamic-notch {
+  pointer-events: none !important;
+}
+
+/* Shift-to-Peek Glass Transparency for Windows Overlap Mode */
+.dynamic-notch-wrapper--peek-through {
+  opacity: 0.15 !important;
+  pointer-events: none !important;
+}
+
+.dynamic-notch-wrapper--peek-through .dynamic-notch {
+  pointer-events: none !important;
+  filter: blur(0.3px) !important;
+}
+
+.dynamic-notch-wrapper--peek-through .notch-ear {
+  opacity: 0.15 !important;
+}
+
+.island-backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: transparent;
+  z-index: 9985;
+  pointer-events: auto;
+}
+
+/* ─── Seamless Inverted Concave Corner Wings (Zero-Gap Overlapped Vector Fillets) ── */
+
+.notch-ear {
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 8px;
+  pointer-events: none;
+  z-index: 1;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  transition: width var(--glace-duration-base) var(--glace-ease-spring),
+              height var(--glace-duration-base) var(--glace-ease-spring),
+              right var(--glace-duration-base) var(--glace-ease-spring),
+              left var(--glace-duration-base) var(--glace-ease-spring) !important;
+}
+
+/* Base Ear Vector: Pure 1:1 Circular Arc Fillet (Tangential at top and side) */
+.notch-ear--left {
+  right: calc(100% - 0px);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0,0 A100,100 0 0,1 100,100 V0 Z' fill='%23000000'/%3E%3C/svg%3E");
+}
+
+/* Right Ear is a 100% exact mathematical horizontal mirror of left (Native Vector SVG, zero transform distortion) */
+.notch-ear--right {
+  left: calc(100% - 0px);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'%3E%3Cpath d='M0,100 A100,100 0 0,1 100,0 H0 Z' fill='%23000000'/%3E%3C/svg%3E");
+}
+
+/* ─── Active Section Ears: Refined 18px Circular Fillets Matching Reference ─── */
+.dynamic-notch--expanded .notch-ear--left,
+.dynamic-notch--expanded .notch-ear--right,
+.dynamic-notch--ios-active .notch-ear--left,
+.dynamic-notch--ios-active .notch-ear--right,
+.dynamic-notch--hardware-expanded .notch-ear--left,
+.dynamic-notch--hardware-expanded .notch-ear--right {
+  width: 18px;
+  height: 18px;
+}
+
+.dynamic-notch--bluetooth-expanded .notch-ear--left,
+.dynamic-notch--bluetooth-expanded .notch-ear--right {
+  width: 14px;
+  height: 14px;
+}
+
+/* ─── Detached Mini Split Pill Ears (Symmetrical 8px fillets matching main notch) ─── */
+.notch-split-secondary .notch-ear {
+  width: 8px;
+  height: 8px;
+}
+.notch-split-secondary .notch-ear--left {
+  right: calc(100% - 0px);
+}
+.notch-split-secondary .notch-ear--right {
+  left: calc(100% - 0px);
+}
+
+/* ─── DynamicWin Solid Pitch-Black Body ───────────────────────────────────── */
+
+.dynamic-notch {
+  position: relative;
+  top: 0;
+  transform-origin: top center !important;
+  background: #000000;
+  color: #ffffff;
+  border: none !important;
+  outline: none !important;
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  box-shadow: none !important;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  overflow: visible !important;
+  cursor: pointer;
+  pointer-events: auto;
+
+  transition: width var(--glace-duration-base) var(--glace-ease-spring),
+              height var(--glace-duration-base) var(--glace-ease-spring),
+              border-radius var(--glace-duration-base) var(--glace-ease-spring),
+              padding var(--glace-duration-base) var(--glace-ease-spring),
+              transform var(--glace-duration-fast) var(--glace-ease-spring) !important;
+}
+
+.dynamic-notch,
+.dynamic-notch--compact,
+.dynamic-notch--activity,
+.dynamic-notch--expanded,
+.dynamic-notch--ios-active,
+.dynamic-notch--bluetooth-expanded,
+.notch-split-main,
+.notch-split-secondary {
+  transform-origin: top center !important;
+}
+
+/* ─── Notch Ambient Glass & Song Thumbnail Background Cover ─────────────────── */
+.notch-bg-cover {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+  -webkit-mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 9px, rgba(0, 0, 0, 0.5) 22px, rgba(0, 0, 0, 1) 45px, rgba(0, 0, 0, 1) 100%);
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0) 9px, rgba(0, 0, 0, 0.5) 22px, rgba(0, 0, 0, 1) 45px, rgba(0, 0, 0, 1) 100%);
+  transition: opacity 0.3s ease;
+}
+
+.notch-bg-cover--media {
+  background: #000000;
+}
+
+/* Song Thumbnail Artwork as Notch Background */
+.notch-media-thumbnail-bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  filter: blur(6px) brightness(0.62) saturate(130%);
+  transform: scale(1.06);
+  pointer-events: none;
+}
+
+/* Contrast Protection Overlay so all text and playback controls remain crystal sharp */
+.notch-media-thumbnail-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.25) 22px,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+}
+
+/* ─── Dynamic Luminous Moving Light Border (Edge-Hugging Masked Comets) ─── */
+
+.notch-light-border {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  padding: 1.6px;
+  padding-top: 0;
+}
+
+.notch-stream-half {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.notch-stream--left {
+  left: 0;
+  border-bottom-left-radius: inherit;
+}
+
+.notch-stream--right {
+  right: 0;
+  border-bottom-right-radius: inherit;
+}
+
+.notch-stream--left .notch-stream-comet {
+  position: absolute;
+  top: -150%;
+  left: -150%;
+  width: 400%;
+  height: 400%;
+  transform-origin: 62.5% 37.5%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 285deg,
+    rgba(56, 189, 248, 0.02) 295deg,
+    rgba(56, 189, 248, 0.15) 315deg,
+    rgba(56, 189, 248, 0.45) 335deg,
+    var(--wave-color, #38bdf8) 355deg,
+    transparent 360deg
+  );
+  filter: drop-shadow(0 0 5px var(--wave-color, rgba(56, 189, 248, 0.8)));
+  animation: notchCometLeftLinear 2.6s linear infinite;
+}
+
+.notch-stream--right .notch-stream-comet {
+  position: absolute;
+  top: -150%;
+  right: -150%;
+  width: 400%;
+  height: 400%;
+  transform-origin: 37.5% 37.5%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    var(--wave-color, #38bdf8) 5deg,
+    rgba(56, 189, 248, 0.45) 25deg,
+    rgba(56, 189, 248, 0.15) 45deg,
+    rgba(56, 189, 248, 0.02) 65deg,
+    transparent 75deg,
+    transparent 360deg
+  );
+  filter: drop-shadow(0 0 5px var(--wave-color, rgba(56, 189, 248, 0.8)));
+  animation: notchCometRightLinear 2.6s linear infinite;
+}
+
+@keyframes notchCometLeftLinear {
+  0% {
+    transform: rotate(205deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  65% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: rotate(285deg);
+    opacity: 0;
+  }
+}
+
+@keyframes notchCometRightLinear {
+  0% {
+    transform: rotate(155deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  65% {
+    opacity: 0.85;
+  }
+  85% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: rotate(75deg);
+    opacity: 0;
+  }
+}
+
+
+
+/* ─── Zero-GPU Idle Optimization: Pause comet light animation when compact notch is idle ─── */
+.dynamic-notch--compact .notch-stream-comet {
+  animation-play-state: paused;
+  opacity: 0;
+  filter: none;
+  transition: opacity 0.3s ease;
+}
+
+.dynamic-notch--compact:hover .notch-stream-comet,
+.dynamic-notch--activity .notch-stream-comet,
+.dynamic-notch--expanded .notch-stream-comet,
+.dynamic-notch--ios-active .notch-stream-comet,
+.dynamic-notch--bluetooth-expanded .notch-stream-comet,
+.notch-split-main .notch-stream-comet,
+.notch-split-secondary .notch-stream-comet {
+  animation-play-state: running;
+  opacity: 1;
+}
+
+/* ─── Interactive Notch Hover & Active Touch Feedback ─────────────────────── */
+
+.dynamic-notch--compact:hover,
+.dynamic-notch--activity:hover,
+.dynamic-notch--bluetooth-compact:hover,
+.notch-split-main:hover,
+.notch-split-secondary:hover {
+  height: 31px !important;
+  padding-bottom: 2px !important;
+}
+
+.dynamic-notch:hover .notch-stream-comet {
+  filter: drop-shadow(0 0 8px var(--wave-color, rgba(56, 189, 248, 0.95)));
+}
+
+.dynamic-notch--compact:active,
+.dynamic-notch--activity:active,
+.dynamic-notch--bluetooth-compact:active,
+.notch-split-main:active,
+.notch-split-secondary:active {
+  transform: scale(0.975);
+  transform-origin: top center;
+}
+
+/* ─── State 1: Compact Notch (Clean Time & Battery - Zero Camera) ────────── */
+
+.dynamic-notch--compact {
+  width: auto;
+  min-width: 148px;
+  max-width: 180px;
+  height: 26px;
+  padding: 0 12px;
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  animation: notch-activate-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.notch-compact-layout {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+  animation: notchContentFadeIn var(--glace-duration-base) var(--glace-ease-spring) both;
+}
+
+.notch-compact-left {
+  display: flex;
+  align-items: center;
+}
+
+.notch-compact-right {
+  display: flex;
+  align-items: center;
+}
+
+/* ─── Compact Notch: Redesigned Living Clock Widget ─── */
+.notch-compact-clock-widget {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.notch-compact-digits-wrapper {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2.5px;
+}
+
+.notch-compact-digits {
+  font-size: 11.5px;
+  font-weight: 650;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.notch-compact-period {
+  font-size: 8px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* ─── Compact Notch: Redesigned Circular Battery Complication ─── */
+.notch-compact-battery-widget {
+  display: inline-flex;
+  align-items: center;
+  gap: 2.5px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.notch-battery-gauge-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.notch-battery-ring-svg {
+  display: block;
+  flex-shrink: 0;
+  overflow: visible;
+}
+
+.notch-compact-battery-text {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: -0.15px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  transition: color 0.3s ease;
+}
+
+/* Subtle breathing glow when charging */
+@keyframes batteryChargeGlow {
+  0%, 100% {
+    filter: drop-shadow(0 0 2px rgba(34, 197, 94, 0.35));
+  }
+  50% {
+    filter: drop-shadow(0 0 6px rgba(34, 197, 94, 0.8));
+  }
+}
+
+.notch-compact-battery-widget--charging .notch-battery-ring-svg {
+  animation: batteryChargeGlow 2s ease-in-out infinite;
+}
+
+/* ─── State 2: Single Live Activity Notch (When only Media is active) ────── */
+
+.dynamic-notch--activity {
+  width: auto;
+  min-width: 150px;
+  max-width: 185px;
+  height: 26px;
+  padding: 0 9px;
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  animation: notch-activate-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.notch-activity-layout {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 6px;
+  padding: 0 1px;
+  animation: notchContentFadeIn var(--glace-duration-base) var(--glace-ease-spring) both;
+}
+
+.notch-activity-left {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.notch-album-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 3.5px;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  animation: notchThumbPop var(--glace-duration-base) var(--glace-ease-spring) both;
+}
+
+.notch-album-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.notch-album-thumb--mini {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+}
+
+/* Middle: Clean Song Title Display */
+.notch-activity-middle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0 2px;
+}
+
+.notch-swap-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.notch-swap-layer--active {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.notch-swap-layer--title.notch-swap-layer--hidden {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.96);
+}
+
+.notch-swap-layer--volume.notch-swap-layer--hidden {
+  opacity: 0;
+  transform: translateY(8px) scale(0.96);
+}
+
+.notch-activity-title {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90px;
+  letter-spacing: 0.15px;
+}
+
+.notch-activity-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ─── State 3: Multi-Activity Split Notch (Matches User Reference Image 3) ── */
+
+.notch-split-container {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px; /* Compact separation between main notch and secondary notch */
+  position: relative;
+  top: 0;
+  transition: all var(--glace-duration-base) var(--glace-ease-spring) !important;
+}
+
+
+.notch-split-main {
+  height: 26px;
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  animation: notch-activate-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transition: all var(--glace-duration-base) var(--glace-ease-spring) !important;
+}
+
+/* Compact Left Section when Media is active on main (Matches Ref Image 3) */
+.notch-split-main--media {
+  min-width: 110px;
+  max-width: 130px;
+  padding: 0 9px;
+}
+
+.notch-split-media-layout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 16px;
+}
+
+/* Left Section when Bluetooth is active on main */
+.notch-split-main--bluetooth {
+  min-width: 120px;
+  max-width: 145px;
+  padding: 0 10px;
+}
+
+.notch-split-bt-layout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 6px;
+}
+
+.notch-split-bt-icon {
+  display: flex;
+  align-items: center;
+  color: #22c55e;
+  flex-shrink: 0;
+}
+
+.notch-split-bt-name {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #22c55e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 78px;
+  flex: 1;
+}
+
+
+/* Left Section when Default Time + Battery is active on main */
+.notch-split-main--default {
+  min-width: 136px;
+  max-width: 156px;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Detached Secondary Right Pill (Matches main notch 14px curvature & smooth circular bottom) */
+.notch-split-secondary {
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0;
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: notch-activate-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both;
+  transition: all var(--glace-duration-base) var(--glace-ease-spring) !important;
+}
+
+.notch-mini-battery-ring {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* ─── State 4: Expanded Bluetooth Connected Card ──────────────────────────── */
+
+.dynamic-notch--bluetooth-expanded {
+  width: 330px;
+  height: 66px;
+  padding: 10px 16px;
+  border-bottom-left-radius: 28px;
+  border-bottom-right-radius: 28px;
+  cursor: default;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: notch-card-expand 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.notch-bluetooth-expanded-card {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  gap: 12px;
+  animation: notchCardContentFadeIn var(--glace-duration-base) var(--glace-ease-spring) both;
+}
+
+/* Left Badge: Circular Dark Emblem with Bluetooth & Side Bars */
+.notch-bt-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #141416;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.6);
+  animation: notchThumbPop var(--glace-duration-base) var(--glace-ease-spring) both;
+}
+
+/* Center / Information Text Column */
+.notch-bt-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.notch-bt-status {
+  font-size: 10.5px;
+  font-weight: 500;
+  color: #8e8e93;
+  letter-spacing: 0.2px;
+  line-height: 1.2;
+}
+
+.notch-bt-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.1px;
+  line-height: 1.22;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Right: Circular Ring Battery Meter */
+.notch-bt-battery-ring-container {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.notch-bt-ring-svg {
+  transform: rotate(0deg);
+  filter: drop-shadow(0 0 5px rgba(34, 197, 94, 0.4));
+}
+
+.notch-bt-ring-text {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 700;
+  color: #22c55e;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.2px;
+}
+
+/* ─── State 5: Full Expanded Media Card ───────────────────────────────────── */
+
+.dynamic-notch--expanded {
+  width: 348px;
+  height: 148px;
+  padding: 13px 18px 12px;
+  border-bottom-left-radius: 28px;
+  border-bottom-right-radius: 28px;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.12),
+              0 18px 48px rgba(0, 0, 0, 0.85) !important;
+  animation: notch-card-expand 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.notch-expanded-card {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", system-ui, sans-serif;
+  animation: notchCardContentFadeIn var(--glace-duration-base) var(--glace-ease-spring) both;
+  user-select: none;
+}
+
+@keyframes notchCardContentFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Row 1: Top Row (Album Art, Meta Text, Top-Right Waveform) */
+.notch-card-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.notch-card-media-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.notch-card-art {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+}
+
+.notch-card-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.notch-card-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.notch-card-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  letter-spacing: -0.1px;
+  line-height: 1.25;
+}
+
+.notch-card-artist {
+  font-size: 11px;
+  font-weight: 500;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.notch-card-wave-right {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding-left: 8px;
+}
+
+/* ─── Equalizer Waveform Bars (Dynamic Luminous Color-Blending Soundwave) ─── */
+
+.notch-equalizer-wave {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.2px;
+  height: 14px;
+  animation: notchWaveRise 0.3s cubic-bezier(0.16, 1, 0.3, 1) 0.04s both;
+}
+
+.notch-wave-bar {
+  width: 2.2px;
+  height: 13px;
+  border-radius: 1.1px;
+  background: var(--wave-gradient, linear-gradient(180deg, var(--wave-gradient-top, #bae6fd) 0%, var(--wave-gradient-bottom, #0284c7) 100%));
+  box-shadow: 0 0 5px var(--wave-glow, rgba(14, 165, 233, 0.45));
+  transform-origin: center center;
+  transform: scaleY(0.25);
+  animation: notchWaveMiddleAnim 1.4s ease-in-out infinite alternate;
+  transition: background 0.8s ease, box-shadow 0.8s ease;
+}
+
+.notch-wave-bar:nth-child(1) { animation-duration: 1.25s; animation-delay: 0.05s; }
+.notch-wave-bar:nth-child(2) { animation-duration: 1.65s; animation-delay: 0.28s; }
+.notch-wave-bar:nth-child(3) { animation-duration: 1.15s; animation-delay: 0.15s; }
+.notch-wave-bar:nth-child(4) { animation-duration: 1.45s; animation-delay: 0.38s; }
+.notch-wave-bar:nth-child(5) { animation-duration: 1.30s; animation-delay: 0.10s; }
+
+.notch-equalizer-wave--paused .notch-wave-bar {
+  animation-play-state: paused !important;
+  transform: scaleY(0.25) !important;
+  opacity: 0.55;
+}
+
+
+/* Row 2: Scrubber Row (Inline Labels + Track + Rounded Pill Thumb) */
+.notch-card-scrubber-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.notch-time-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  color: #71717a;
+  font-variant-numeric: tabular-nums;
+  min-width: 30px;
+}
+
+.notch-time-label:first-child {
+  text-align: left;
+}
+
+.notch-time-label:last-child {
+  text-align: right;
+}
+
+.notch-scrubber-track {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: height 0.15s ease;
+}
+
+.notch-scrubber-track:hover {
+  height: 6px;
+}
+
+.notch-scrubber-fill {
+  height: 100%;
+  background: #ffffff;
+  border-radius: 3px;
+  transition: width 0.1s linear;
+}
+
+.notch-scrubber-thumb {
+  position: absolute;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ffffff;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.6);
+  pointer-events: none;
+  transition: left 0.1s linear, transform 0.15s ease;
+}
+
+.notch-scrubber-track:hover .notch-scrubber-thumb {
+  transform: translate(-50%, -50%) scale(1.3);
+}
+
+/* Row 3: 5 Playback Controls (Enlarged & Tightly Clustered) */
+/* Row 3: 5 Playback Controls */
+.notch-card-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 4px 16px 2px;
+}
+
+.notch-btn-icon {
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 0;
+  transition: transform var(--glace-duration-fast) var(--glace-ease-spring), opacity 0.16s ease, color 0.2s ease;
+  opacity: 0.85;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.notch-btn-icon:hover {
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff;
+  opacity: 1;
+  transform: scale(1.18);
+}
+
+.notch-btn-icon:active {
+  transform: scale(0.92);
+}
+
+.notch-btn-icon:focus,
+.notch-btn-icon:focus-visible {
+  outline: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.notch-btn-icon--play {
+  width: 40px;
+  height: 40px;
+  background: transparent !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: none !important;
+  opacity: 1;
+  transform: scale(1.25);
+}
+
+.notch-btn-icon--play:hover {
+  background: transparent !important;
+  color: #ffffff !important;
+  transform: scale(1.4);
+  box-shadow: none !important;
+}
+
+.notch-btn-icon--play:active {
+  transform: scale(1.12);
+}
+
+.notch-btn-icon--active {
+  color: #ef4444 !important;
+  opacity: 1;
+}
+
+@keyframes notchContentFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes notchThumbPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes notchTitleSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes notch-activate-bounce {
+  0% {
+    transform: scaleX(0.72) scaleY(0.7);
+    opacity: 0.4;
+  }
+  60% {
+    transform: scaleX(1.05) scaleY(1.08);
+    opacity: 1;
+  }
+  82% {
+    transform: scaleX(0.98) scaleY(0.97);
+  }
+  100% {
+    transform: scaleX(1) scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes notch-card-expand {
+  0% {
+    transform: scaleX(0.72) scaleY(0.48);
+    opacity: 0.25;
+  }
+  60% {
+    transform: scaleX(1.04) scaleY(1.07);
+    opacity: 1;
+  }
+  82% {
+    transform: scaleX(0.985) scaleY(0.98);
+  }
+  100% {
+    transform: scaleX(1) scaleY(1);
+    opacity: 1;
+  }
+}
+
+@keyframes notchWaveRise {
+  0% {
+    opacity: 0;
+    transform: scaleX(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+}
+
+@keyframes notchWaveMiddleAnim {
+  0% { transform: scaleY(0.2); }
+  50% { transform: scaleY(0.95); }
+  100% { transform: scaleY(0.4); }
+}
+
+/* ─── State 6: Full Expanded Apple Concentric Activity Rings Island (Exact Media Player Size: 348px × 148px) ── */
+
+.dynamic-notch--ios-active {
+  width: 348px;
+  height: 148px;
+  padding: 12px 16px 11px;
+  border-bottom-left-radius: 28px;
+  border-bottom-right-radius: 28px;
+  background: #000000 !important;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: inset 0 0 0 0.5px rgba(255, 255, 255, 0.12),
+              0 18px 48px rgba(0, 0, 0, 0.95) !important;
+  animation: notch-card-expand 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.notch-expanded-settings-card {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  width: 100%;
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "SF Pro", system-ui, sans-serif;
+  animation: notchCardContentFadeIn var(--glace-duration-base) var(--glace-ease-spring) both;
+  user-select: none;
+}
+
+/* ─── Row 1: Header Bar (Top) ─── */
+.apple-full-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 22px;
+}
+
+.apple-full-status {
+  display: inline-flex;
+  align-items: center;
+  cursor: default;
+  line-height: 1;
+}
+
+.apple-net-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(235, 235, 245, 0.85);
+  transition: color 0.22s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-wifi-svg {
+  overflow: visible;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), filter 0.25s ease, color 0.25s ease;
+}
+
+.apple-full-status:hover .apple-wifi-svg {
+  transform: scale(1.15);
+  filter: drop-shadow(0 0 6px rgba(48, 209, 88, 0.8));
+  color: #30d158;
+}
+
+.apple-full-status:hover .apple-wifi-arc--1 {
+  animation: appleWifiRadiate 0.85s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+  animation-delay: 0s;
+}
+
+.apple-full-status:hover .apple-wifi-arc--2 {
+  animation: appleWifiRadiate 0.85s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+  animation-delay: 0.15s;
+}
+
+.apple-full-status:hover .apple-wifi-arc--3 {
+  animation: appleWifiRadiate 0.85s cubic-bezier(0.16, 1, 0.3, 1) infinite alternate;
+  animation-delay: 0.3s;
+}
+
+@keyframes appleWifiRadiate {
+  0% {
+    opacity: 0.35;
+    stroke-width: 2.1;
+  }
+  100% {
+    opacity: 1;
+    stroke-width: 2.6;
+  }
+}
+
+.apple-eth-svg {
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), filter 0.22s ease;
+}
+
+.apple-full-status:hover .apple-eth-svg {
+  transform: scale(1.12);
+  filter: drop-shadow(0 0 6px rgba(48, 209, 88, 0.8));
+  color: #30d158;
+}
+
+.apple-full-status--offline .apple-net-icon {
+  color: #ff453a;
+}
+
+.apple-full-actions {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.apple-action-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3.5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 2.5px 7px;
+  color: rgba(235, 235, 245, 0.75);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  line-height: 1;
+}
+
+.apple-action-pill:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  transform: scale(1.04);
+}
+
+.apple-action-pill:active {
+  transform: scale(0.95);
+}
+
+.apple-action-pill--on {
+  background: rgba(48, 209, 88, 0.16);
+  border-color: rgba(48, 209, 88, 0.35);
+  color: #30d158;
+}
+
+.apple-action-dot {
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  transition: background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.apple-action-pill--on .apple-action-dot {
+  background: #30d158;
+  box-shadow: 0 0 5px #30d158;
+}
+
+.apple-action-pill--music {
+  color: #ffffff;
+}
+
+.apple-music-wave {
+  display: flex;
+  align-items: center;
+  gap: 1.5px;
+  height: 8px;
+}
+
+.apple-music-wave span {
+  width: 1.5px;
+  height: 100%;
+  background: #30d158;
+  border-radius: 1px;
+  animation: iosMiniWave 1s ease-in-out infinite alternate;
+}
+
+.apple-music-wave span:nth-child(1) { animation-delay: 0s; height: 45%; }
+.apple-music-wave span:nth-child(2) { animation-delay: 0.25s; height: 100%; }
+.apple-music-wave span:nth-child(3) { animation-delay: 0.45s; height: 60%; }
+
+.apple-action-icon {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: rgba(235, 235, 245, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.apple-action-icon:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  transform: scale(1.08);
+}
+
+.apple-action-icon:active {
+  transform: scale(0.9);
+}
+
+.apple-action-icon--music {
+  color: #30d158;
+  background: rgba(48, 209, 88, 0.12);
+  border-color: rgba(48, 209, 88, 0.28);
+}
+
+.apple-action-icon--music:hover {
+  background: rgba(48, 209, 88, 0.24);
+  border-color: rgba(48, 209, 88, 0.55);
+  box-shadow: 0 0 8px rgba(48, 209, 88, 0.4);
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+.apple-exit-icon {
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 0.5px solid rgba(255, 255, 255, 0.1);
+  color: rgba(235, 235, 245, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.apple-exit-icon:hover {
+  background: rgba(255, 69, 58, 0.25);
+  border-color: rgba(255, 69, 58, 0.5);
+  color: #ff453a;
+  transform: scale(1.1);
+}
+
+.apple-exit-icon:active {
+  transform: scale(0.9);
+}
+
+/* ─── Row 2: Hero Section (Concentric Rings + Telemetry Pods) ─── */
+.apple-full-body {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 82px;
+}
+
+.apple-rings-large-wrap {
+  position: relative;
+  width: 78px;
+  height: 78px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: default;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-rings-large-wrap:hover {
+  transform: scale(1.05);
+}
+
+.apple-rings-large-svg {
+  display: block;
+  overflow: visible;
+}
+
+.apple-rings-large-center {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.apple-rings-large-cpu {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.apple-rings-large-tag {
+  font-size: 7.5px;
+  font-weight: 700;
+  color: #ff453a;
+  letter-spacing: 0.05em;
+  margin-top: 1.5px;
+  line-height: 1;
+}
+
+.apple-rings-large-divider {
+  width: 0.5px;
+  height: 70px;
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 10px;
+  flex-shrink: 0;
+}
+
+/* 2x2 Telemetry Cards Grid */
+.apple-telemetry-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.apple-tel-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 0.5px solid rgba(255, 255, 255, 0.07);
+  border-radius: 9px;
+  padding: 5px 8px 5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  cursor: default;
+  transition: background 0.22s ease, border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.apple-tel-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.apple-tel-card--active-cpu {
+  background: rgba(255, 69, 58, 0.12) !important;
+  border-color: rgba(255, 69, 58, 0.5) !important;
+  box-shadow: 0 0 10px rgba(255, 69, 58, 0.25);
+  transform: translateY(-1px);
+}
+
+.apple-tel-card--active-ram {
+  background: rgba(191, 90, 242, 0.12) !important;
+  border-color: rgba(191, 90, 242, 0.5) !important;
+  box-shadow: 0 0 10px rgba(191, 90, 242, 0.25);
+  transform: translateY(-1px);
+}
+
+.apple-tel-card--active-down {
+  background: rgba(48, 209, 88, 0.12) !important;
+  border-color: rgba(48, 209, 88, 0.5) !important;
+  box-shadow: 0 0 10px rgba(48, 209, 88, 0.25);
+  transform: translateY(-1px);
+}
+
+.apple-tel-card--active-up {
+  background: rgba(56, 189, 248, 0.12) !important;
+  border-color: rgba(56, 189, 248, 0.5) !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+  transform: translateY(-1px);
+}
+
+.apple-tel-card-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.apple-vital-dot {
+  width: 4.5px;
+  height: 4.5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.apple-vital-dot--cpu {
+  background: #ff453a;
+  box-shadow: 0 0 5px rgba(255, 69, 58, 0.7);
+}
+
+.apple-vital-dot--ram {
+  background: #bf5af2;
+  box-shadow: 0 0 5px rgba(191, 90, 242, 0.7);
+}
+
+.apple-vital-dot--net {
+  background: #30d158;
+  box-shadow: 0 0 5px rgba(48, 209, 88, 0.7);
+}
+
+.apple-vital-dot--up {
+  background: #0a84ff;
+  box-shadow: 0 0 5px rgba(10, 132, 255, 0.7);
+}
+
+.apple-tel-card-title {
+  font-size: 8.5px;
+  font-weight: 600;
+  color: rgba(235, 235, 245, 0.5);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.apple-tel-card-val-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 3px;
+}
+
+.apple-tel-card-val {
+  font-size: 11px;
+  font-weight: 750;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.apple-tel-card-val--down {
+  color: #30d158;
+}
+
+.apple-tel-card-val--up {
+  color: #38bdf8;
+}
+
+.apple-tel-card-sub {
+  font-size: 8px;
+  font-weight: 600;
+  color: rgba(235, 235, 245, 0.45);
+  line-height: 1;
+}
+
+/* ─── Row 3: Footer Bar (Bottom) ─── */
+.apple-full-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 18px;
+  border-top: 0.5px solid rgba(255, 255, 255, 0.06);
+  padding-top: 4px;
+}
+
+.apple-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8px;
+  font-weight: 550;
+  color: rgba(235, 235, 245, 0.45);
+  letter-spacing: 0.01em;
+  line-height: 1;
+}
+
+.apple-footer-dot {
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.apple-settings-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3.5px;
+  background: none;
+  border: none;
+  color: rgba(235, 235, 245, 0.6);
+  font-size: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 1px 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.apple-settings-link:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+
+.notch-bento-grid {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  width: 100%;
+  height: 180px;
+  gap: 8px;
+  margin-top: 6px;
+  animation: notchCardContentFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.notch-bento-grid--proper {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  width: 100%;
+  height: 180px;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+/* ─── 1. Card 1: 12-Hour Clock ─── */
+.bento-card--clock12 {
+  width: 118px;
+  flex-shrink: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 8px 8px;
+  text-align: center;
+  border-radius: 14px;
+  border-bottom-left-radius: 16px;
+}
+
+.bento-clock-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 4px;
+}
+
+.bento-clock-ampm-badge {
+  background: rgba(194, 65, 12, 0.2);
+  color: #ea580c;
+  border: 1px solid rgba(194, 65, 12, 0.35);
+  font-size: 9.5px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 0 6px rgba(194, 65, 12, 0.2);
+}
+
+.bento-clock-tz {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--glace-text-secondary, #94a3b8);
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+}
+
+.bento-clock-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  margin: 2px 0;
+}
+
+.bento-card--clock12 .bento-clock-num {
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 0.95;
+  color: var(--glace-text-primary, #ffffff);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+}
+
+.bento-card--clock12 .bento-clock-dots {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 3.5px;
+  margin: 3px 0;
+}
+
+.bento-card--clock12 .bento-clock-dots span {
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  background: #c2410c;
+  box-shadow: 0 0 6px rgba(194, 65, 12, 0.7);
+}
+
+.bento-clock-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 2px;
+  box-sizing: border-box;
+  padding: 0 4px;
+}
+
+.bento-clock-weekday {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--glace-text-primary, #f1f5f9);
+  line-height: 1.1;
+}
+
+.bento-clock-date-str {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--glace-text-secondary, #94a3b8);
+}
+
+.bento-clock-sec-track {
+  width: 100%;
+  height: 2.5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.bento-clock-sec-fill {
+  height: 100%;
+  background: #c2410c;
+  border-radius: 999px;
+  transition: width 0.25s linear;
+}
+
+/* ─── 2. Card 2: Glance Hub ─── */
+.bento-card--glance {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 12px 9px;
+  border-radius: 20px;
+}
+
+.bento-glance-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 5px;
+}
+
+.bento-glance-title-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.bento-glance-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #c2410c;
+  box-shadow: 0 0 6px rgba(194, 65, 12, 0.8);
+}
+
+.bento-glance-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.3px;
+}
+
+.bento-glance-greeting {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: var(--glace-text-secondary, #94a3b8);
+}
+
+.bento-glance-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.bento-glance-stats--expanded {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 4px 0;
+}
+
+.bento-glance-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9.5px;
+  font-weight: 500;
+  color: #cbd5e1;
+}
+
+.bento-glance-stat-row svg {
+  color: #c2410c;
+  flex-shrink: 0;
+}
+
+.bento-glance-stat-lbl {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bento-glance-chip {
+  font-size: 8px;
+  font-weight: 700;
+  color: #ea580c;
+  background: rgba(194, 65, 12, 0.16);
+  border: 1px solid rgba(194, 65, 12, 0.3);
+  padding: 0.5px 4px;
+  border-radius: 4px;
+  margin-left: auto;
+  letter-spacing: 0.3px;
+}
+
+.bento-glance-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.bento-glance-pill {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #e2e8f0;
+  cursor: default;
+  transition: all 0.15s ease;
+}
+
+.bento-glance-pill--vol {
+  cursor: pointer;
+}
+
+.bento-glance-pill--vol:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ─── 3. Card 3: Calendar Full ─── */
+.bento-card--calendar-full {
+  width: 212px;
+  flex-shrink: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 8px 10px 8px;
+  border-radius: 14px;
+  border-bottom-right-radius: 16px;
+}
+
+.bento-cal-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.bento-cal-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bento-cal-month-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+}
+
+.bento-cal-badge-today {
+  font-size: 8px;
+  font-weight: 800;
+  color: #c2410c;
+  background: rgba(194, 65, 12, 0.15);
+  border: 1px solid rgba(194, 65, 12, 0.3);
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+}
+
+.bento-cal-grid-full {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: minmax(0, 1fr);
+  width: 100%;
+  flex: 1;
+  align-items: center;
+  justify-items: center;
+  row-gap: 1.5px;
+}
+
+.bento-cal-day-header {
+  font-size: 8.5px;
+  font-weight: 700;
+  color: var(--glace-text-secondary, #94a3b8);
+  text-align: center;
+  margin-bottom: 2px;
+}
+
+.bento-cal-cell {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: #e2e8f0;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-variant-numeric: tabular-nums;
+  transition: background 0.15s ease;
+}
+
+.bento-cal-cell--dim {
+  color: #475569;
+  opacity: 0.45;
+}
+
+.bento-cal-cell--today {
+  background: #c2410c !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(194, 65, 12, 0.7);
+}
+
+/* ─── TAB 4: Controls & Utilities View (High-Utility Action Grid) ────────── */
+
+.notch-controls-view {
+  width: 100%;
+  height: 180px;
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+  animation: notchCardContentFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ─── App Identity & Exit Action Bento Card ─── */
+.notch-app-card {
+  width: 194px;
+  flex-shrink: 0;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.05) 0%, rgba(14, 165, 233, 0.04) 45%, rgba(0, 0, 0, 0.4) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 12px 13px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.notch-app-card::before {
+  content: "";
+  position: absolute;
+  top: -30px;
+  left: -20px;
+  width: 110px;
+  height: 110px;
+  background: radial-gradient(circle, rgba(0, 140, 255, 0.2) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.notch-app-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 1;
+}
+
+.notch-app-icon-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.notch-app-icon {
+  width: 100%;
+  height: 100%;
+  border-radius: 11px;
+  object-fit: cover;
+  box-shadow: 0 4px 14px rgba(0, 102, 255, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: block;
+}
+
+.notch-app-icon-glow {
+  position: absolute;
+  inset: -2px;
+  border-radius: 13px;
+  background: radial-gradient(circle, rgba(0, 153, 255, 0.4) 0%, transparent 75%);
+  z-index: -1;
+  filter: blur(5px);
+}
+
+.notch-app-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.notch-app-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notch-app-ver {
+  font-size: 9px;
+  font-weight: 600;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  padding: 1px 5px;
+  border-radius: 6px;
+  line-height: 1.2;
+}
+
+.notch-app-status {
+  font-size: 9.5px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+}
+
+.notch-app-status-dot {
+  width: 5.5px;
+  height: 5.5px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 8px #10b981;
+  animation: pulse-dot 2s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.8); }
+}
+
+.notch-app-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4.5px;
+  margin: 6px 0;
+  z-index: 1;
+}
+
+.notch-app-chip {
+  font-size: 8.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 2.5px 6.5px;
+  border-radius: 6px;
+  letter-spacing: 0.01em;
+}
+
+.notch-app-exit-btn {
+  width: 100%;
+  height: 38px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 12px;
+  color: #fca5a5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  cursor: pointer;
+  padding: 0 12px;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+  z-index: 1;
+}
+
+.notch-app-exit-btn:hover {
+  background: rgba(239, 68, 68, 0.22);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.25);
+  transform: translateY(-1px);
+}
+
+.notch-app-exit-btn:active {
+  transform: scale(0.97);
+}
+
+.notch-app-exit-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+}
+
+.notch-app-exit-btn:hover .notch-app-exit-icon {
+  color: #ffffff;
+}
+
+.notch-app-exit-text {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.notch-app-exit-label {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.notch-app-exit-sub {
+  font-size: 8.5px;
+  color: rgba(252, 165, 165, 0.7);
+}
+
+.notch-app-exit-btn:hover .notch-app-exit-sub {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* ─── Controls 6-Tile Grid ─── */
+.notch-controls-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 7px;
+  height: 100%;
+}
+
+.notch-ctrl-tile {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 13px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.notch-ctrl-tile:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(14, 165, 233, 0.45);
+  transform: translateY(-1.5px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.18);
+}
+
+.notch-ctrl-tile:active {
+  transform: scale(0.97);
+}
+
+.notch-ctrl-tile--active {
+  background: rgba(16, 185, 129, 0.12) !important;
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+.notch-ctrl-tile--mute-active {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border-color: rgba(239, 68, 68, 0.35) !important;
+}
+
+.notch-ctrl-icon-box {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #f1f5f9;
+  transition: all 0.18s ease;
+}
+
+.notch-ctrl-tile:hover .notch-ctrl-icon-box {
+  background: rgba(14, 165, 233, 0.2);
+  border-color: rgba(14, 165, 233, 0.4);
+  color: #38bdf8;
+}
+
+.notch-ctrl-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.notch-ctrl-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notch-ctrl-sub {
+  font-size: 8.5px;
+  font-weight: 500;
+  color: var(--glace-text-secondary, #94a3b8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+.bento-col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bento-col--left {
+  width: 104px;
+  flex-shrink: 0;
+}
+
+.bento-col--center {
+  flex: 1;
+  min-width: 0;
+}
+
+.bento-col--right {
+  width: 142px;
+  flex-shrink: 0;
+}
+
+/* Base Bento Card */
+.bento-card {
+  position: relative;
+  background: rgba(255, 248, 245, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.bento-card:hover {
+  background: rgba(255, 248, 245, 0.085);
+  border-color: rgba(255, 255, 255, 0.13);
+}
+
+/* 1. Weather Card */
+.bento-card--weather {
+  height: 58px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  gap: 10px;
+}
+
+.bento-weather-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.bento-weather-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.bento-weather-temp {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--glace-text-primary, #ffffff);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
+}
+
+.bento-weather-desc {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--glace-text-secondary, #94a3b8);
+  margin-top: 1px;
+}
+
+/* 2. Stacked Clock Card */
+.bento-card--clock {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px 6px;
+  text-align: center;
+  border-bottom-left-radius: 16px;
+}
+
+.bento-clock-num {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 0.95;
+  color: var(--glace-text-primary, #ffffff);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.5px;
+}
+
+.bento-clock-dots {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 3.5px;
+  margin: 3px 0;
+}
+
+.bento-clock-dots span {
+  width: 3.5px;
+  height: 3.5px;
+  border-radius: 50%;
+  background: #c2410c;
+  box-shadow: 0 0 6px rgba(194, 65, 12, 0.6);
+}
+
+.bento-clock-date {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--glace-text-secondary, #94a3b8);
+  margin-top: 5px;
+  letter-spacing: 0.2px;
+}
+
+/* 3. Host Info Card */
+.bento-card--host {
+  height: 58px;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 12px;
+}
+
+.bento-host-avatar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.bento-host-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5px;
+  justify-content: center;
+  min-width: 0;
+  flex: 1;
+}
+
+.bento-host-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bento-host-row svg {
+  flex-shrink: 0;
+  color: #c2410c;
+}
+
+/* Row with Calendar + Sliders */
+.bento-center-bottom-row {
+  flex: 1;
+  display: flex;
+  gap: 8px;
+  height: 110px;
+}
+
+/* 4. Calendar Card */
+.bento-card--calendar {
+  flex: 1;
+  height: 100%;
+  padding: 6px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bento-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-template-rows: auto repeat(5, 1fr);
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-items: center;
+  row-gap: 1.5px;
+}
+
+.bento-cal-header {
+  font-size: 8px;
+  font-weight: 700;
+  color: var(--glace-text-secondary, #94a3b8);
+  text-transform: capitalize;
+  margin-bottom: 2px;
+}
+
+.bento-cal-day {
+  font-size: 9px;
+  font-weight: 500;
+  color: #e2e8f0;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-variant-numeric: tabular-nums;
+  transition: background 0.15s ease;
+}
+
+.bento-cal-day--dim {
+  color: #475569;
+  opacity: 0.6;
+}
+
+.bento-cal-day--today {
+  background: #c2410c !important;
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(194, 65, 12, 0.65);
+}
+
+/* 5. Sliders Card */
+.bento-card--sliders {
+  width: 58px;
+  height: 100%;
+  padding: 8px 4px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+}
+
+.bento-slider-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100%;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.bento-slider-track {
+  width: 10px;
+  flex: 1;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.bento-slider-fill {
+  width: 100%;
+  border-radius: 999px;
+  transition: height 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bento-slider-fill--vol {
+  background: #c2410c;
+  box-shadow: 0 0 8px rgba(194, 65, 12, 0.5);
+}
+
+.bento-slider-fill--bright {
+  background: #d97706;
+  box-shadow: 0 0 8px rgba(217, 119, 6, 0.5);
+}
+
+.bento-slider-fill--battery {
+  background: #65a30d;
+  box-shadow: 0 0 8px rgba(101, 163, 13, 0.5);
+}
+
+.bento-slider-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--glace-text-secondary, #94a3b8);
+  flex-shrink: 0;
+}
+
+/* 6. Now Playing Vinyl Deck Card */
+.bento-card--vinyl {
+  height: 100%;
+  padding: 10px 8px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  text-align: center;
+  border-bottom-right-radius: 16px;
+}
+
+.bento-vinyl-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.bento-vinyl-needle-tick {
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3.5px;
+  height: 9px;
+  background: #c2410c;
+  border-radius: 2px;
+  box-shadow: 0 0 6px rgba(194, 65, 12, 0.8);
+  z-index: 3;
+}
+
+.bento-vinyl-disc {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  position: relative;
+  background: radial-gradient(circle, #1c1917 0%, #0c0a09 100%);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5), inset 0 0 0 1.2px rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bento-vinyl-disc::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.04),
+              inset 0 0 0 6px rgba(0, 0, 0, 0.7),
+              inset 0 0 0 9px rgba(255, 255, 255, 0.03),
+              inset 0 0 0 12px rgba(0, 0, 0, 0.7),
+              inset 0 0 0 15px rgba(255, 255, 255, 0.04);
+  pointer-events: none;
+}
+
+.bento-vinyl-disc--spinning {
+  animation: bentoVinylSpin 8s linear infinite;
+}
+
+@keyframes bentoVinylSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.bento-vinyl-label {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.8), 0 0 6px rgba(0, 0, 0, 0.6);
+  background: #292524;
+}
+
+.bento-vinyl-label img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.bento-vinyl-spindle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 5px;
+  height: 5px;
+  background: #1c1917;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  z-index: 3;
+}
+
+.bento-vinyl-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 0 2px;
+  margin: 2px 0 4px;
+}
+
+.bento-vinyl-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--glace-text-primary, #ffffff);
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.bento-vinyl-subtitle {
+  font-size: 8.5px;
+  font-weight: 600;
+  color: #c2410c;
+  margin-top: 1px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bento-vinyl-artist {
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--glace-text-secondary, #94a3b8);
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.bento-vinyl-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.bento-vinyl-btn {
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: all 0.15s ease;
+}
+
+.bento-vinyl-btn:hover {
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+.bento-vinyl-btn--play {
+  background: rgba(194, 65, 12, 0.2);
+  color: #ea580c;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(194, 65, 12, 0.35);
+  box-shadow: 0 0 10px rgba(194, 65, 12, 0.25);
+}
+
+.bento-vinyl-btn--play:hover {
+  background: #c2410c;
+  color: #ffffff;
+  border-color: #c2410c;
+  box-shadow: 0 0 14px rgba(194, 65, 12, 0.6);
+  transform: scale(1.08);
+}
+
+/* 7. Workspaces View */
+.notch-workspaces-view {
+  width: 100%;
+  height: 176px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 6px;
+  animation: notchCardContentFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.notch-workspaces-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.notch-ws-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.notch-ws-card:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-2px);
+}
+
+.notch-ws-card--active {
+  background: rgba(194, 65, 12, 0.12);
+  border-color: #c2410c;
+  box-shadow: 0 0 14px rgba(194, 65, 12, 0.25);
+}
+
+.notch-ws-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.notch-ws-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #64748b;
+}
+
+.notch-ws-card--active .notch-ws-dot {
+  background: #c2410c;
+  box-shadow: 0 0 8px rgba(194, 65, 12, 0.8);
+}
+
+.notch-ws-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.notch-ws-status {
+  font-size: 10px;
+  color: var(--glace-text-secondary, #94a3b8);
+}
+
+/* ─── CodeNotch AI Deck & Assistants Grid (Caelestia Hardware Tab 5) ────── */
+
+.notch-ai-deck {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  gap: 8px;
+  padding: 4px 2px 2px;
+  animation: nexusPageFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.notch-ai-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 6px;
+}
+
+.notch-ai-header-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notch-ai-live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #64748b;
+  transition: all 0.2s ease;
+}
+
+.notch-ai-live-dot--active {
+  background: #06b6d4;
+  box-shadow: 0 0 8px #06b6d4, 0 0 14px rgba(6, 182, 212, 0.6);
+  animation: notchAiPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes notchAiPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.25); opacity: 0.75; }
+}
+
+.notch-ai-header-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f1f5f9;
+  letter-spacing: -0.2px;
+}
+
+.notch-ai-header-chip {
+  font-size: 9px;
+  font-weight: 500;
+  color: #06b6d4;
+  background: rgba(6, 182, 212, 0.12);
+  border: 1px solid rgba(6, 182, 212, 0.28);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.notch-ai-refresh-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: #94a3b8;
+  font-size: 9.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.notch-ai-refresh-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.notch-ai-refresh-btn--loading svg {
+  animation: spin 0.8s linear infinite;
+}
+
+/* 2-Column Responsive Bento Grid */
+.notch-ai-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  max-height: 165px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.notch-ai-grid::-webkit-scrollbar {
+  width: 3px;
+}
+
+.notch-ai-grid::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+}
+
+/* Individual AI Provider Card */
+.notch-ai-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(18, 20, 26, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  padding: 7px 9px;
+  position: relative;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.18s ease,
+              box-shadow 0.18s ease;
+  user-select: none;
+}
+
+.notch-ai-card:hover {
+  transform: translateY(-1.5px);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.notch-ai-card--active {
+  border-color: rgba(var(--ai-accent), 0.35);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%), rgba(18, 20, 26, 0.95);
+  box-shadow: 0 0 12px -2px rgba(var(--ai-accent), 0.15);
+}
+
+.notch-ai-card--offline {
+  opacity: 0.55;
+  filter: grayscale(40%);
+}
+
+.notch-ai-card--offline:hover {
+  opacity: 0.8;
+  filter: grayscale(0%);
+}
+
+/* Left: Codenotch Arc Ring & Monogram */
+.notch-ai-card-left {
+  flex-shrink: 0;
+}
+
+.notch-ai-arc-box {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notch-ai-arc-svg {
+  position: absolute;
+  inset: 0;
+  transform-origin: center;
+}
+
+.notch-ai-arc-progress {
+  transition: stroke-dashoffset 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notch-ai-glyph {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+/* Middle: Info & Active Model */
+.notch-ai-card-mid {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5px;
+}
+
+.notch-ai-card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.notch-ai-card-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notch-ai-badge {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 1px 4px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+.notch-ai-badge--active {
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.14);
+}
+
+.notch-ai-badge--idle {
+  color: #94a3b8;
+  background: rgba(148, 163, 184, 0.12);
+}
+
+.notch-ai-badge--blocked {
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.14);
+}
+
+.notch-ai-badge--offline {
+  color: #64748b;
+  background: rgba(100, 116, 139, 0.1);
+}
+
+.notch-ai-card-model {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: #cbd5e1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: ui-monospace, monospace;
+}
+
+.notch-ai-card-sub {
+  font-size: 8.5px;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Right: Action Button */
+.notch-ai-card-action {
+  flex-shrink: 0;
+}
+
+.notch-ai-btn {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #e2e8f0;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 3px 7px;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.notch-ai-btn:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+/* ─── Compact Notch AI Pill Indicator ───────────────────────────────────── */
+
+.notch-compact-ai-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(6, 182, 212, 0.12);
+  border: 1px solid rgba(6, 182, 212, 0.32);
+  border-radius: 999px;
+  padding: 1px 6px;
+  margin-left: 2px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.notch-compact-ai-pill:hover {
+  background: rgba(6, 182, 212, 0.22);
+  border-color: rgba(6, 182, 212, 0.55);
+}
+
+.notch-compact-ai-dot {
+  width: 4.5px;
+  height: 4.5px;
+  border-radius: 50%;
+  background: #06b6d4;
+  box-shadow: 0 0 5px #06b6d4;
+  animation: notchAiPulse 1.6s ease-in-out infinite;
+}
+
+.notch-compact-ai-tag {
+  font-size: 8.5px;
+  font-weight: 700;
+  color: #06b6d4;
+  letter-spacing: 0.2px;
+}
+
+/* ════════════════════════════════════════════════════════════════════════════
+   OSD TRANSIENT STATES — All 23 states from the reference design
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Base OSD notch class: shared sizing + animation ── */
+.dynamic-notch--osd {
+  z-index: 9992;
+}
+
+/* ─── In-Notch Inline Volume Feedback (Zero layout jumps) ───────────────── */
+.notch-inline-volume {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  height: 100%;
+  padding: 0 4px;
+  animation: notchFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notch-inline-volume svg {
+  flex-shrink: 0;
+  color: #38bdf8;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.45));
+}
+
+.notch-inline-volume-bar {
+  flex: 1;
+  height: 3.5px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  position: relative;
+  overflow: hidden;
+}
+
+.notch-inline-volume-fill {
+  height: 100%;
+  background: #38bdf8;
+  border-radius: 999px;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.6);
+  transition: width 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.notch-inline-volume-text {
+  font-size: 11px;
+  font-weight: 700;
+  color: #38bdf8;
+  font-variant-numeric: tabular-nums;
+  min-width: 28px;
+  text-align: right;
+  letter-spacing: -0.2px;
+}
+
+/* ─── Compact Right (Idle & Dual Split) Crossfade / Morph Layer ─── */
+.notch-compact-right-morph {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 38px;
+  height: 100%;
+}
+
+.notch-swap-layer-compact {
+  position: absolute;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+
+.notch-swap-layer-compact--active {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.notch-swap-layer-compact--hidden {
+  opacity: 0;
+  transform: scale(0.72);
+}
+
+.notch-compact-volume {
+  display: flex;
+  align-items: center;
+  gap: 3.5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #38bdf8;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.notch-compact-volume svg {
+  flex-shrink: 0;
+  color: #38bdf8;
+  filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.45));
+}
+
+/* ─── OSD: Brightness slider layout ─────────────────────────────── */
+.dynamic-notch--brightness {
+  width: 260px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+}
+
+.osd-slider-layout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  width: 100%;
+  height: 100%;
+}
+
+.osd-slider-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  opacity: 0.85;
+}
+
+.osd-slider-track {
+  flex: 1;
+  position: relative;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  overflow: visible;
+}
+
+.osd-slider-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.osd-slider-thumb {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
+  transition: left 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.osd-slider-value {
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.7);
+  min-width: 28px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+/* ─── OSD: Status pill (DND / Camera / Mic) ──────────────────── */
+.dynamic-notch--dnd,
+.dynamic-notch--camera,
+.dynamic-notch--mic {
+  width: 220px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+}
+
+.osd-status-layout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  width: 100%;
+  height: 100%;
+}
+
+.osd-status-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.osd-status-icon--dnd {
+  background: rgba(99, 102, 241, 0.22);
+  color: #818cf8;
+}
+
+.osd-status-icon--camera {
+  background: rgba(34, 197, 94, 0.18);
+  color: #4ade80;
+}
+
+.osd-status-icon--mic {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+}
+
+.osd-status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.osd-status-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #e2e8f0;
+  line-height: 1;
+}
+
+.osd-status-sub {
+  font-size: 9.5px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.osd-status-sub--green { color: #4ade80; }
+.osd-status-sub--red { color: #f87171; }
+.osd-status-sub--blue { color: #818cf8; }
+.osd-status-sub--orange { color: #fbbf24; }
+.osd-status-sub--dim { color: rgba(255, 255, 255, 0.35); }
+
+/* ─── OSD: Incoming Call ─────────────────────────────────────────────────── */
+.dynamic-notch--call {
+  width: 300px !important;
+  height: 52px !important;
+  min-height: 52px !important;
+}
+
+.osd-call-layout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 12px;
+  width: 100%;
+  height: 100%;
+}
+
+.osd-call-avatar {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.5);
+}
+
+.osd-call-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.osd-call-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.osd-call-sub {
+  font-size: 9.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.osd-call-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.osd-call-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #fff;
+}
+
+.osd-call-btn--decline {
+  background: #ef4444;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.45);
+}
+
+.osd-call-btn--decline:hover {
+  background: #dc2626;
+  transform: scale(1.08);
+}
+
+.osd-call-btn--accept {
+  background: #22c55e;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.45);
+}
+
+.osd-call-btn--accept:hover {
+  background: #16a34a;
+  transform: scale(1.08);
+}
+
+/* ─── OSD: Screen Recording ──────────────────────────────────────────────── */
+.dynamic-notch--recording {
+  width: 210px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+}
+
+.osd-recording-layout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  width: 100%;
+  height: 100%;
+}
+
+.osd-rec-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+  flex-shrink: 0;
+  animation: notchRecordBlink 1s ease-in-out infinite;
+}
+
+@keyframes notchRecordBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+.osd-rec-time {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 700;
+  color: #f1f5f9;
+  font-variant-numeric: tabular-nums;
+}
+
+.osd-rec-actions {
+  display: flex;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.osd-rec-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.osd-rec-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.osd-rec-btn--mic {
+  color: #fbbf24;
+  background: rgba(251, 191, 36, 0.12);
+}
+
+/* ─── OSD: Timer ─────────────────────────────────────────────────────────── */
+.dynamic-notch--timer {
+  width: 220px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+}
+
+.osd-timer-layout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  width: 100%;
+  height: 100%;
+}
+
+.osd-timer-icon {
+  flex-shrink: 0;
+  color: rgba(255, 255, 255, 0.55);
+  display: flex;
+  align-items: center;
+}
+
+.osd-timer-value {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 800;
+  color: #f1f5f9;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.3px;
+}
+
+.osd-timer-actions {
+  display: flex;
+  gap: 5px;
+}
+
+/* ─── OSD: Download ──────────────────────────────────────────────────────── */
+.dynamic-notch--download {
+  width: 340px !important;
+  height: 52px !important;
+  min-height: 52px !important;
+}
+
+.osd-download-layout {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  width: 100%;
+  height: 100%;
+}
+
+.osd-dl-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.osd-dl-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.osd-dl-filename {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.osd-dl-track {
+  height: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+  position: relative;
+}
+
+.osd-dl-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  background: linear-gradient(90deg, #38bdf8, #6366f1);
+  border-radius: 999px;
+  transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.osd-dl-fill--indeterminate {
+  width: 34%;
+  animation: notchDownloadSweep 1.15s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes notchDownloadSweep {
+  from { transform: translateX(-115%); }
+  to { transform: translateX(330%); }
+}
+
+.osd-dl-meta {
+  font-size: 8.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.4);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.osd-dl-pct {
+  font-size: 13px;
+  font-weight: 800;
+  color: #38bdf8;
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  min-width: 32px;
+  text-align: right;
+}
+
+.osd-dl-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+/* ─── OSD: Notification ──────────────────────────────────────────────────── */
+.dynamic-notch--notification {
+  width: 310px !important;
+  height: 52px !important;
+  min-height: 52px !important;
+}
+
+.osd-notif-layout {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  width: 100%;
+  height: 100%;
+}
+
+.osd-notif-app-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: rgba(99, 102, 241, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.osd-notif-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow: hidden;
+}
+
+.osd-notif-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.osd-notif-body {
+  font-size: 9.5px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.osd-notif-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #6366f1;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.7);
+}
+
+/* ─── Hover expanded: network speed overlay in idle notch ────────────────── */
+.dynamic-notch--compact.notch--hover-hint .notch-compact-layout {
+  gap: 10px;
+}
+
+.notch-hover-net {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8.5px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+  font-variant-numeric: tabular-nums;
+}
+
+.notch-hover-net-icon {
+  opacity: 0.5;
+  display: flex;
+}
+
+
+
+

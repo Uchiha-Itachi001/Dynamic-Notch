@@ -1,0 +1,1211 @@
+use serde::{Deserialize, Serialize};
+use windows::core::BOOL;
+use windows::Win32::Foundation::{HWND, LPARAM};
+use windows::Win32::UI::Input::KeyboardAndMouse::{keybd_event, KEYBD_EVENT_FLAGS, KEYEVENTF_KEYUP};
+use windows::Win32::UI::WindowsAndMessaging::{EnumWindows, GetWindowTextW, GetWindowThreadProcessId, IsWindow, IsWindowVisible};
+use windows::Win32::System::Com::{CoInitializeEx, COINIT_MULTITHREADED};
+use windows::Media::Control::{
+    GlobalSystemMediaTransportControlsSession,
+    GlobalSystemMediaTransportControlsSessionManager,
+    GlobalSystemMediaTransportControlsSessionPlaybackStatus,
+};
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MediaSessionInfo {
+    pub title: String,
+    pub artist: String,
+    pub album_title: Option<String>,
+    pub is_playing: bool,
+    pub duration_sec: u64,
+    pub current_sec: u64,
+    pub album_art_base64: Option<String>,
+    #[serde(default)]
+    pub position_ms: Option<u64>,
+    #[serde(default)]
+    pub duration_ms: Option<u64>,
+}
+
+impl MediaSessionInfo {
+    pub fn basic_win32(title: String, artist: String) -> Self {
+        Self {
+            title,
+            artist,
+            album_title: None,
+            is_playing: true,
+            duration_sec: 0,
+            current_sec: 0,
+            album_art_base64: None,
+            position_ms: Some(0),
+            duration_ms: Some(0),
+        }
+    }
+}
+
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
+
+static APP_HANDLE: Mutex<Option<tauri::AppHandle>> = Mutex::new(None);
+
+struct MediaCache {
+    manager: Option<GlobalSystemMediaTransportControlsSessionManager>,
+    last_fetch: Option<Instant>,
+    cached_session: Option<MediaSessionInfo>,
+    active_session: Option<GlobalSystemMediaTransportControlsSession>,
+    active_app_id: String,
+    active_title: String,
+}
+
+static MEDIA_CACHE: Mutex<MediaCache> = Mutex::new(MediaCache {
+    manager: None,
+    last_fetch: None,
+    cached_session: None,
+    active_session: None,
+    active_app_id: String::new(),
+    active_title: String::new(),
+});
+
+struct SendThumb(windows::Storage::Streams::IRandomAccessStreamReference);
+unsafe impl Send for SendThumb {}
+unsafe impl Sync for SendThumb {}
+
+impl SendThumb {
+    pub fn extract(&self) -> Option<String> {
+        extract_thumbnail_base64(&self.0)
+    }
+}
+
+struct ArtCacheEntry {
+    title: String,
+    artist: String,
+    art_base64: Option<String>,
+}
+
+static ART_CACHE: Mutex<Option<ArtCacheEntry>> = Mutex::new(None);
+static ART_FETCHING_KEY: Mutex<Option<(String, String)>> = Mutex::new(None);
+
+fn extract_browser_media_title(raw: &str) -> Option<String> {
+    let mut title = raw.trim();
+    if title.is_empty() {
+        return None;
+    }
+
+    let browser_suffixes = [
+        " - Personal - Microsoft​ Edge",
+        " - Work - Microsoft​ Edge",
+        " - Microsoft​ Edge",
+        " - Personal - Microsoft Edge",
+        " - Work - Microsoft Edge",
+        " - Microsoft Edge",
+        " - Google Chrome",
+        " - Brave",
+        " - Mozilla Firefox",
+        " - Opera",
+        " - Vivaldi",
+        " - Arc",
+    ];
+
+    for suffix in browser_suffixes {
+        if let Some(pos) = title.rfind(suffix) {
+            title = &title[..pos];
+        }
+    }
+
+    let trimmed = title.trim();
+    if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("New Tab") || trimmed.eq_ignore_ascii_case("Edge") {
+        return None;
+    }
+
+    let mut clean_track = trimmed.to_string();
+
+    if clean_track.starts_with('(') {
+        if let Some(close_pos) = clean_track.find(')') {
+            let inner = &clean_track[1..close_pos];
+            if inner.chars().all(|c| c.is_ascii_digit() || c == '+') {
+                clean_track = clean_track[close_pos + 1..].trim().to_string();
+            }
+        }
+    }
+
+    if let Some(pos) = clean_track.rfind(" - YouTube") {
+        clean_track = clean_track[..pos].trim().to_string();
+    } else if let Some(pos) = clean_track.rfind(" | YouTube") {
+        clean_track = clean_track[..pos].trim().to_string();
+    } else if clean_track.starts_with("YouTube - ") {
+        clean_track = clean_track["YouTube - ".len()..].trim().to_string();
+    }
+
+    if !clean_track.is_empty() && !clean_track.eq_ignore_ascii_case("YouTube") {
+        Some(clean_track)
+    } else {
+        None
+    }
+}
+
+fn find_matching_browser_title(app_id_lower: &str) -> Option<String> {
+    struct SearchState {
+        app_id_lower: String,
+        best_title: Option<String>,
+        fg_hwnd: HWND,
+    }
+
+    let fg_hwnd = unsafe { windows::Win32::UI::WindowsAndMessaging::GetForegroundWindow() };
+
+    let mut state = SearchState {
+        app_id_lower: app_id_lower.to_string(),
+        best_title: None,
+        fg_hwnd,
+    };
+
+    unsafe extern "system" fn enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
+        let state = &mut *(lparam.0 as *mut SearchState);
+        if !IsWindow(Some(hwnd)).as_bool() || !IsWindowVisible(hwnd).as_bool() {
+            return BOOL(1);
+        }
+
+        let (exe, _) = get_window_exe_path(hwnd);
+        let exe_lower = exe.to_lowercase();
+        let matches_app = (state.app_id_lower.contains("edge") && exe_lower.contains("msedge"))
+            || (state.app_id_lower.contains("chrome") && exe_lower.contains("chrome"))
+            || (state.app_id_lower.contains("brave") && exe_lower.contains("brave"))
+            || (state.app_id_lower.contains("firefox") && exe_lower.contains("firefox"));
+
+        if matches_app {
+            let mut title_buf = [0u16; 512];
+            let len = GetWindowTextW(hwnd, &mut title_buf);
+            if len > 0 {
+                let raw_win_title = String::from_utf16_lossy(&title_buf[..len as usize]);
+                if let Some(clean) = extract_browser_media_title(&raw_win_title) {
+                    if hwnd == state.fg_hwnd {
+                        state.best_title = Some(clean);
+                        return BOOL(0); // Focused browser window, stop search immediately!
+                    } else if state.best_title.is_none() {
+                        state.best_title = Some(clean);
+                    }
+                }
+            }
+        }
+        BOOL(1)
+    }
+
+    unsafe {
+        let _ = EnumWindows(
+            Some(enum_proc),
+            LPARAM(&mut state as *mut _ as isize),
+        );
+    }
+
+    state.best_title
+}
+
+fn extract_thumbnail_base64(thumb_ref: &windows::Storage::Streams::IRandomAccessStreamReference) -> Option<String> {
+    use base64::engine::general_purpose::STANDARD as BASE64;
+    use base64::Engine;
+    use windows::Storage::Streams::DataReader;
+
+    let stream = thumb_ref.OpenReadAsync().ok()?.get().ok()?;
+    let size = stream.Size().ok()? as usize;
+    if size == 0 || size > 8 * 1024 * 1024 {
+        return None;
+    }
+
+    let reader = DataReader::CreateDataReader(&stream).ok()?;
+    let load_op = reader.LoadAsync(size as u32).ok()?;
+    let loaded = load_op.get().ok()?;
+    if (loaded as usize) < size {
+        return None;
+    }
+
+    let mut bytes = vec![0u8; size];
+    reader.ReadBytes(&mut bytes).ok()?;
+
+    let mime = if bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47]) {
+        "image/png"
+    } else if bytes.starts_with(&[0x52, 0x49, 0x46, 0x46]) {
+        "image/webp"
+    } else {
+        "image/jpeg"
+    };
+
+    Some(format!("data:{};base64,{}", mime, BASE64.encode(&bytes)))
+}
+
+/// Clean local file paths, file extensions, and formatting from raw song/video titles
+pub fn clean_media_title(raw: &str) -> String {
+    let mut title = raw.trim();
+
+    // 1. Strip file URI prefix
+    if title.starts_with("file:///") {
+        title = title.trim_start_matches("file:///");
+    }
+
+    // 2. If title is a full file path (e.g. C:\Downloads\Video.mp4 or /path/to/song.mp3), extract filename
+    if let Some(pos) = title.rfind(['\\', '/']) {
+        title = &title[pos + 1..];
+    }
+
+    // 3. Strip common audio & video file extensions
+    let extensions = [
+        ".mp3", ".mp4", ".mkv", ".wav", ".flac", ".avi", ".mov", ".webm",
+        ".m4a", ".aac", ".opus", ".ogg", ".wma", ".wmv", ".m4v", ".3gp",
+        ".ts", ".m2ts", ".vob", ".iso"
+    ];
+    let mut title_owned = title.to_string();
+    for ext in extensions {
+        if title_owned.to_lowercase().ends_with(ext) {
+            let len = title_owned.len() - ext.len();
+            title_owned.truncate(len);
+            break;
+        }
+    }
+
+    // 4. Strip browser download duplicate counters e.g. " [1]", " (1)", " [2]" from end of filename
+    let trimmed = title_owned.trim();
+    if let Some(stripped) = trimmed.strip_suffix(']') {
+        if let Some(pos) = stripped.rfind('[') {
+            let inner = &stripped[pos + 1..];
+            if inner.chars().all(|c| c.is_ascii_digit()) {
+                title_owned = stripped[..pos].trim().to_string();
+            }
+        }
+    } else if let Some(stripped) = trimmed.strip_suffix(')') {
+        if let Some(pos) = stripped.rfind('(') {
+            let inner = &stripped[pos + 1..];
+            if inner.chars().all(|c| c.is_ascii_digit()) {
+                title_owned = stripped[..pos].trim().to_string();
+            }
+        }
+    }
+
+    // 5. Replace underscores with spaces if no space exists (e.g. My_Cool_Track -> My Cool Track)
+    if title_owned.contains('_') && !title_owned.contains(' ') {
+        title_owned = title_owned.replace('_', " ");
+    }
+
+    title_owned.trim().to_string()
+}
+
+/// Helper to parse "Artist - Title" strings from window titles
+fn parse_artist_title(raw_track: &str, default_player: &str) -> (String, String) {
+    if let Some((a, t)) = raw_track.split_once(" - ") {
+        let clean_a = a.trim().to_string();
+        let clean_t = clean_media_title(t);
+        if !clean_t.is_empty() && !clean_a.is_empty() {
+            return (clean_a, clean_t);
+        }
+    }
+    let clean = clean_media_title(raw_track);
+    (default_player.to_string(), clean)
+}
+
+/// Derive user-friendly application / service names from SourceAppUserModelId
+fn get_friendly_source_name(app_id: &str) -> String {
+    let lower = app_id.to_lowercase();
+    if lower.contains("zunemusic") || lower.contains("mediaplayer") {
+        "Media Player".to_string()
+    } else if lower.contains("zunevideo") || lower.contains("movies") {
+        "Movies & TV".to_string()
+    } else if lower.contains("spotify") {
+        "Spotify".to_string()
+    } else if lower.contains("vlc") {
+        "VLC media player".to_string()
+    } else if lower.contains("chrome") {
+        "Chrome".to_string()
+    } else if lower.contains("edge") || lower.contains("edg") {
+        "Edge".to_string()
+    } else if lower.contains("brave") {
+        "Brave".to_string()
+    } else if lower.contains("firefox") {
+        "Firefox".to_string()
+    } else if lower.contains("opera") {
+        "Opera".to_string()
+    } else if lower.contains("wmplayer") {
+        "Windows Media Player".to_string()
+    } else if !app_id.trim().is_empty() {
+        if let Some(pos) = app_id.find('!') {
+            app_id[pos + 1..].replace(".App", "").replace(".exe", "")
+        } else {
+            app_id.replace(".exe", "")
+        }
+    } else {
+        "Local Media".to_string()
+    }
+}
+
+struct LocalMediaWin {
+    exe: String,
+    title: String,
+}
+
+/// Win32 Local Media Player Fallback Scanner (VLC, MPC-HC, MPV, PotPlayer, foobar2000, AIMP, WMP, KMPlayer, MusicBee, GOM)
+/// Scans all top-level windows directly so background/unfocused playback is always detected
+fn scan_win32_media_players() -> Option<MediaSessionInfo> {
+    let mut media_windows: Vec<LocalMediaWin> = Vec::new();
+
+    unsafe extern "system" fn enum_proc(hwnd: HWND, lparam: LPARAM) -> BOOL {
+        if !IsWindow(Some(hwnd)).as_bool() || !IsWindowVisible(hwnd).as_bool() {
+            return BOOL(1);
+        }
+
+        let mut pid: u32 = 0;
+        GetWindowThreadProcessId(hwnd, Some(&mut pid));
+        if pid == 0 {
+            return BOOL(1);
+        }
+
+        let (exe_name, _) = get_window_exe_path(hwnd);
+        let exe_lower = exe_name.to_lowercase();
+
+        let is_media_app = exe_lower == "vlc.exe"
+            || exe_lower.starts_with("mpc-hc")
+            || exe_lower.starts_with("mpc-be")
+            || exe_lower.starts_with("potplayer")
+            || exe_lower == "mpv.exe"
+            || exe_lower == "foobar2000.exe"
+            || exe_lower == "aimp.exe"
+            || exe_lower == "wmplayer.exe"
+            || exe_lower == "musicbee.exe"
+            || exe_lower.starts_with("kmplayer")
+            || exe_lower.starts_with("gom");
+
+        if is_media_app {
+            let mut title_buf = [0u16; 512];
+            let len = GetWindowTextW(hwnd, &mut title_buf);
+            if len > 0 {
+                let title = String::from_utf16_lossy(&title_buf[..len as usize]);
+                let list = &mut *(lparam.0 as *mut Vec<LocalMediaWin>);
+                list.push(LocalMediaWin {
+                    exe: exe_lower,
+                    title,
+                });
+            }
+        }
+
+        BOOL(1)
+    }
+
+    unsafe {
+        let _ = EnumWindows(Some(enum_proc), LPARAM(&mut media_windows as *mut _ as isize));
+    }
+
+    for win in media_windows {
+        let exe_lower = win.exe;
+        let title_raw = win.title.trim();
+        if title_raw.is_empty() {
+            continue;
+        }
+
+        if exe_lower == "vlc.exe" {
+            // Idle state: "VLC media player"
+            if title_raw.eq_ignore_ascii_case("VLC media player") {
+                continue;
+            }
+            let track_raw = title_raw.trim_end_matches(" - VLC media player").trim();
+            let (artist, title) = parse_artist_title(track_raw, "VLC media player");
+            if !title.is_empty() {
+                return Some(MediaSessionInfo::basic_win32(title, artist));
+            }
+        } else if exe_lower.starts_with("mpc-hc") || exe_lower.starts_with("mpc-be") {
+            if title_raw.eq_ignore_ascii_case("Media Player Classic Home Cinema")
+                || title_raw.eq_ignore_ascii_case("MPC-HC")
+                || title_raw.eq_ignore_ascii_case("MPC-BE")
+            {
+                continue;
+            }
+            let track_raw = title_raw
+                .trim_end_matches(" - MPC-HC")
+                .trim_end_matches(" - MPC-BE")
+                .trim();
+            let (artist, title) = parse_artist_title(track_raw, "MPC-HC");
+            if !title.is_empty() {
+                return Some(MediaSessionInfo::basic_win32(title, artist));
+            }
+        } else if exe_lower.starts_with("potplayer") {
+            if title_raw.eq_ignore_ascii_case("PotPlayer")
+                || title_raw.eq_ignore_ascii_case("Daum PotPlayer")
+            {
+                continue;
+            }
+            let track_raw = title_raw
+                .trim_end_matches(" - PotPlayer")
+                .trim_end_matches(" - Daum PotPlayer")
+                .trim();
+            let (artist, title) = parse_artist_title(track_raw, "PotPlayer");
+            if !title.is_empty() {
+                return Some(MediaSessionInfo::basic_win32(title, artist));
+            }
+        } else if exe_lower == "mpv.exe" {
+            if title_raw.eq_ignore_ascii_case("mpv") {
+                continue;
+            }
+            let track_raw = title_raw
+                .trim_start_matches("mpv - ")
+                .trim_end_matches(" - mpv")
+                .trim();
+            let (artist, title) = parse_artist_title(track_raw, "mpv");
+            if !title.is_empty() {
+                return Some(MediaSessionInfo::basic_win32(title, artist));
+            }
+        } else if exe_lower == "foobar2000.exe" {
+            if title_raw.eq_ignore_ascii_case("foobar2000") {
+                continue;
+            }
+            let track_raw = title_raw.trim_end_matches(" [foobar2000]").trim();
+            let (artist, title) = parse_artist_title(track_raw, "foobar2000");
+            if !title.is_empty() {
+                return Some(MediaSessionInfo::basic_win32(title, artist));
+            }
+        } else if exe_lower == "aimp.exe" {
+            if title_raw.eq_ignore_ascii_case("AIMP") {
+                continue;
+            }
+            let track_raw = title_raw.trim_end_matches(" - AIMP").trim();
+            let (artist, title) = parse_artist_title(track_raw, "AIMP");
+            if !title.is_empty() {
+                return Some(MediaSessionInfo::basic_win32(title, artist));
+            }
+        } else if exe_lower == "wmplayer.exe" {
+            if title_raw.eq_ignore_ascii_case("Windows Media Player") {
+                continue;
+            }
+            let track_raw = title_raw.trim_end_matches(" - Windows Media Player").trim();
+            let (artist, title) = parse_artist_title(track_raw, "Windows Media Player");
+            if !title.is_empty() {
+                return Some(MediaSessionInfo::basic_win32(title, artist));
+            }
+        } else if exe_lower == "musicbee.exe" {
+            if title_raw.eq_ignore_ascii_case("MusicBee") {
+                continue;
+            }
+            let track_raw = title_raw.trim_end_matches(" - MusicBee").trim();
+            let (artist, title) = parse_artist_title(track_raw, "MusicBee");
+            if !title.is_empty() {
+                return Some(MediaSessionInfo::basic_win32(title, artist));
+            }
+        } else if exe_lower.starts_with("kmplayer") {
+            if title_raw.eq_ignore_ascii_case("KMPlayer") {
+                continue;
+            }
+            let track_raw = title_raw.trim_end_matches(" - KMPlayer").trim();
+            let (artist, title) = parse_artist_title(track_raw, "KMPlayer");
+            if !title.is_empty() {
+                return Some(MediaSessionInfo::basic_win32(title, artist));
+            }
+        } else if exe_lower.starts_with("gom") {
+            if title_raw.eq_ignore_ascii_case("GOM Player") {
+                continue;
+            }
+            let track_raw = title_raw.trim_end_matches(" - GOM Player").trim();
+            let (artist, title) = parse_artist_title(track_raw, "GOM Player");
+            if !title.is_empty() {
+                return Some(MediaSessionInfo::basic_win32(title, artist));
+            }
+        }
+    }
+
+    None
+}
+
+pub fn get_current_media_session() -> Option<MediaSessionInfo> {
+    let now = Instant::now();
+
+    // 1. Check TTL cache snapshot (450ms) to serve concurrent UI widgets without COM churn
+    if let Ok(guard) = MEDIA_CACHE.lock() {
+        if let Some(last_time) = guard.last_fetch {
+            if now.duration_since(last_time) < Duration::from_millis(450) {
+                return guard.cached_session.clone();
+            }
+        }
+    }
+
+    // Ensure COM apartment is initialized on calling thread
+    unsafe {
+        let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+    }
+
+    let mut cache = MEDIA_CACHE.lock().ok()?;
+
+    // 2. Reuse cached session manager or request a new one
+    if cache.manager.is_none() {
+        if let Ok(async_op) = GlobalSystemMediaTransportControlsSessionManager::RequestAsync() {
+            if let Ok(mgr) = async_op.get() {
+                cache.manager = Some(mgr);
+            }
+        }
+    }
+
+    let mut selected_session: Option<GlobalSystemMediaTransportControlsSession> = None;
+
+    let mgr_opt = cache.manager.clone();
+    if let Some(mgr) = mgr_opt {
+        // Priority 1: Check Windows' designated CurrentSession first!
+        if let Ok(curr) = mgr.GetCurrentSession() {
+            let status = curr.GetPlaybackInfo().ok().and_then(|info| info.PlaybackStatus().ok());
+            if status == Some(GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing) {
+                selected_session = Some(curr);
+            }
+        }
+
+        // Priority 2: If CurrentSession is not playing, inspect all sessions and sort by Playing status and newest LastUpdatedTime
+        if selected_session.is_none() {
+            if let Ok(sessions) = mgr.GetSessions() {
+                let mut candidates: Vec<(GlobalSystemMediaTransportControlsSession, i64, bool)> = Vec::new();
+                for session in sessions {
+                    let playback_status = session.GetPlaybackInfo().ok().and_then(|info| info.PlaybackStatus().ok());
+                    if playback_status == Some(GlobalSystemMediaTransportControlsSessionPlaybackStatus::Closed)
+                        || playback_status == Some(GlobalSystemMediaTransportControlsSessionPlaybackStatus::Stopped)
+                    {
+                        continue;
+                    }
+                    let is_playing = playback_status == Some(GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing);
+                    let last_updated = session.GetTimelineProperties().ok()
+                        .and_then(|tl| tl.LastUpdatedTime().ok())
+                        .map(|t| t.UniversalTime)
+                        .unwrap_or(0);
+
+                    candidates.push((session, last_updated, is_playing));
+                }
+
+                // Sort: Playing first (true > false), then newest LastUpdatedTime first
+                candidates.sort_by(|a, b| {
+                    b.2.cmp(&a.2)
+                        .then_with(|| b.1.cmp(&a.1))
+                });
+
+                if let Some((best, _, _)) = candidates.into_iter().next() {
+                    selected_session = Some(best);
+                }
+            } else {
+                cache.manager = None;
+            }
+        }
+
+        // Priority 3: Fallback to paused CurrentSession
+        if selected_session.is_none() {
+            if let Ok(curr) = mgr.GetCurrentSession() {
+                let curr_status = curr.GetPlaybackInfo().ok().and_then(|info| info.PlaybackStatus().ok());
+                if curr_status != Some(GlobalSystemMediaTransportControlsSessionPlaybackStatus::Closed)
+                    && curr_status != Some(GlobalSystemMediaTransportControlsSessionPlaybackStatus::Stopped)
+                {
+                    selected_session = Some(curr);
+                }
+            }
+        }
+    }
+
+    let mut session_info: Option<MediaSessionInfo> = None;
+    let mut resolved_app_id = String::new();
+    let mut resolved_title = String::new();
+
+    if let Some(ref session) = selected_session {
+        let playback_info = session.GetPlaybackInfo().ok();
+        let playback_status = playback_info.and_then(|info| info.PlaybackStatus().ok());
+        let is_closed_or_stopped = playback_status == Some(GlobalSystemMediaTransportControlsSessionPlaybackStatus::Closed)
+            || playback_status == Some(GlobalSystemMediaTransportControlsSessionPlaybackStatus::Stopped);
+
+        if !is_closed_or_stopped {
+            let is_playing = playback_status == Some(GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing);
+
+            let app_id = session.SourceAppUserModelId().map(|s| s.to_string()).unwrap_or_default();
+            let props = session.TryGetMediaPropertiesAsync().ok().and_then(|op| op.get().ok());
+
+            let (raw_title, raw_artist, album_title, send_thumb_opt) = if let Some(ref p) = props {
+                let t = p.Title().map(|s| s.to_string()).unwrap_or_default();
+                let a = p.Artist().map(|s| s.to_string()).unwrap_or_default();
+                let alb = p.AlbumTitle().map(|s| s.to_string()).ok();
+                let thumb = p.Thumbnail().ok().map(SendThumb);
+                (t, a, alb, thumb)
+            } else {
+                (String::new(), String::new(), None, None)
+            };
+
+            // Extract clean title with local path/extension filtering
+            let mut title = if !raw_title.trim().is_empty() {
+                clean_media_title(&raw_title)
+            } else if let Some(ref alb) = album_title {
+                if !alb.trim().is_empty() {
+                    clean_media_title(alb)
+                } else {
+                    get_friendly_source_name(&app_id)
+                }
+            } else {
+                get_friendly_source_name(&app_id)
+            };
+
+            // Cross-reference open browser windows to prevent out-of-sync or stale titles
+            let app_id_lower = app_id.to_lowercase();
+            let is_browser_session = app_id_lower.contains("edge") || app_id_lower.contains("edg")
+                || app_id_lower.contains("chrome") || app_id_lower.contains("brave")
+                || app_id_lower.contains("firefox") || app_id_lower.contains("opera");
+
+            let mut is_stale_props = false;
+            if is_browser_session {
+                if let Some(b_title) = find_matching_browser_title(&app_id_lower) {
+                    let t_lower = title.to_lowercase();
+                    let b_lower = b_title.to_lowercase();
+                    let is_generic = t_lower.is_empty() || t_lower == "edge" || t_lower == "chrome" || t_lower == "brave" || t_lower == "youtube";
+                    let prefix_len = std::cmp::min(12, t_lower.len());
+                    let prefix_match = prefix_len > 0 && b_lower.contains(&t_lower[..prefix_len]);
+
+                    if is_generic || !prefix_match {
+                        if !is_generic && !prefix_match {
+                            is_stale_props = true;
+                        }
+                        title = b_title;
+                    }
+                }
+            }
+
+            resolved_app_id = app_id.clone();
+            resolved_title = title.clone();
+
+            // Extract clean artist or fallback to application/source name
+            let artist = if !raw_artist.trim().is_empty() {
+                raw_artist.trim().to_string()
+            } else {
+                get_friendly_source_name(&app_id)
+            };
+
+            let has_track_details = !title.trim().is_empty() || !artist.trim().is_empty();
+            if has_track_details || is_playing {
+                let timeline = session.GetTimelineProperties().ok();
+                let (current_sec, duration_sec, position_ms, duration_ms) = if let Some(tl) = timeline {
+                    let start_ticks = tl.StartTime().map(|d| d.Duration).unwrap_or(0);
+                    let end_ticks = tl.EndTime().map(|d| d.Duration).unwrap_or(0);
+                    let pos_ticks = tl.Position().map(|d| d.Duration).unwrap_or(0);
+                    let last_updated = tl.LastUpdatedTime().map(|d| d.UniversalTime).unwrap_or(0);
+
+                    let duration_ticks = if end_ticks > start_ticks {
+                        end_ticks - start_ticks
+                    } else if let Ok(max_seek) = tl.MaxSeekTime() {
+                        max_seek.Duration
+                    } else {
+                        0
+                    };
+
+                    let duration_sec = if duration_ticks > 0 {
+                        (duration_ticks / 10_000_000) as u64
+                    } else {
+                        0
+                    };
+
+                    let mut current_ticks = if pos_ticks >= start_ticks {
+                        pos_ticks - start_ticks
+                    } else {
+                        pos_ticks
+                    };
+
+                    // If playing and LastUpdatedTime is valid, project forward with real elapsed wall clock time
+                    if is_playing && last_updated > 0 {
+                        let now_filetime = std::time::SystemTime::now()
+                            .duration_since(std::time::UNIX_EPOCH)
+                            .map(|d| (d.as_nanos() / 100) as i64 + 116_444_736_000_000_000)
+                            .unwrap_or(0);
+
+                        if now_filetime > last_updated {
+                            let elapsed = now_filetime - last_updated;
+                            current_ticks += elapsed;
+                        }
+                    }
+
+                    if duration_ticks > 0 && current_ticks > duration_ticks {
+                        current_ticks = duration_ticks;
+                    }
+
+                    let current_sec = if current_ticks > 0 {
+                        (current_ticks / 10_000_000) as u64
+                    } else {
+                        0
+                    };
+
+                    let pos_ms = (current_ticks / 10_000) as u64;
+                    let dur_ms = (duration_ticks / 10_000) as u64;
+
+                    (current_sec, duration_sec, Some(pos_ms), Some(dur_ms))
+                } else {
+                    (0, 0, None, None)
+                };
+
+                // Asynchronous, non-blocking thumbnail extraction on background thread without stalling UI
+                let mut album_art_base64: Option<String> = None;
+                let mut needs_fetch = false;
+
+                if let Ok(art_guard) = ART_CACHE.lock() {
+                    if let Some(ref entry) = *art_guard {
+                        if entry.title == title && entry.artist == artist {
+                            album_art_base64 = entry.art_base64.clone();
+                        } else {
+                            needs_fetch = true;
+                        }
+                    } else {
+                        needs_fetch = true;
+                    }
+                }
+
+                if (needs_fetch || album_art_base64.is_none()) && !is_stale_props {
+                    if let Some(send_thumb) = send_thumb_opt {
+                        let key = (title.clone(), artist.clone());
+                        let mut should_spawn = false;
+                        if let Ok(mut fetch_guard) = ART_FETCHING_KEY.lock() {
+                            if *fetch_guard != Some(key.clone()) {
+                                *fetch_guard = Some(key);
+                                should_spawn = true;
+                            }
+                        }
+
+                        if should_spawn {
+                            let t_clone = title.clone();
+                            let a_clone = artist.clone();
+                            // Small stack: art extraction is I/O-bound, not recursion-heavy
+                            let _ = std::thread::Builder::new()
+                                .stack_size(256 * 1024)
+                                .spawn(move || {
+                                unsafe {
+                                    let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+                                }
+                                let art = send_thumb.extract();
+                                if let Ok(mut art_guard) = ART_CACHE.lock() {
+                                    *art_guard = Some(ArtCacheEntry {
+                                        title: t_clone,
+                                        artist: a_clone,
+                                        art_base64: art,
+                                    });
+                                }
+                                if let Ok(mut fetch_guard) = ART_FETCHING_KEY.lock() {
+                                    *fetch_guard = None;
+                                }
+                                notify_media_changed();
+                            });
+                        }
+                    }
+                }
+
+                session_info = Some(MediaSessionInfo {
+                    title,
+                    artist,
+                    album_title,
+                    is_playing,
+                    duration_sec,
+                    current_sec,
+                    album_art_base64,
+                    position_ms,
+                    duration_ms,
+                });
+            }
+        }
+    }
+
+    // 3. Priority Arbitration between WinRT GSMTC and Win32 Media Players
+    let win32_media = scan_win32_media_players();
+
+    let final_session = match (session_info, win32_media) {
+        (Some(gsmtc), Some(w32)) => {
+            if gsmtc.is_playing && !gsmtc.title.is_empty() {
+                Some(gsmtc)
+            } else if w32.is_playing && !w32.title.is_empty() {
+                // Actively playing Win32 player (e.g. VLC playing in background) overrides paused/idle GSMTC session!
+                Some(w32)
+            } else {
+                Some(gsmtc)
+            }
+        }
+        (Some(gsmtc), None) => {
+            if !gsmtc.title.is_empty() || gsmtc.is_playing {
+                Some(gsmtc)
+            } else {
+                None
+            }
+        }
+        (None, Some(w32)) => Some(w32),
+        (None, None) => None,
+    };
+
+    cache.last_fetch = Some(now);
+    cache.cached_session = final_session.clone();
+    cache.active_session = selected_session;
+    cache.active_app_id = resolved_app_id;
+    cache.active_title = resolved_title;
+
+    final_session
+}
+
+pub fn notify_media_changed() {
+    if let Ok(mut guard) = MEDIA_CACHE.lock() {
+        guard.last_fetch = None;
+    }
+    if let Ok(guard) = APP_HANDLE.lock() {
+        if let Some(ref app) = *guard {
+            use tauri::Emitter;
+            let session = get_current_media_session();
+            let _ = app.emit("media-session-updated", session);
+        }
+    }
+}
+
+pub fn start_watcher(app: tauri::AppHandle) {
+    if let Ok(mut guard) = APP_HANDLE.lock() {
+        *guard = Some(app.clone());
+    }
+
+    std::thread::spawn(move || {
+        unsafe {
+            let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
+        }
+
+        let mut last_session_key = String::new();
+        let mut last_is_playing = false;
+        let mut last_pos_sec = 0u64;
+
+        loop {
+            // Pause detection is coarse — frontend JS handles smooth 250ms progress animation.
+            // Rust only needs to detect track changes and play/pause transitions.
+            let sleep_ms = if last_is_playing { 500 } else { 1500 };
+            std::thread::sleep(Duration::from_millis(sleep_ms));
+
+            use tauri::Emitter;
+            if let Some(session) = get_current_media_session() {
+                let session_key = format!("{}::{}::{}", session.title, session.artist, session.duration_sec);
+                let pos_diff = if session.current_sec >= last_pos_sec {
+                    session.current_sec - last_pos_sec
+                } else {
+                    last_pos_sec - session.current_sec
+                };
+
+                let changed = session_key != last_session_key
+                    || session.is_playing != last_is_playing
+                    || (session.is_playing && pos_diff >= 1);
+
+                if changed {
+                    last_session_key = session_key;
+                    last_is_playing = session.is_playing;
+                    last_pos_sec = session.current_sec;
+                    let _ = app.emit("media-session-updated", Some(&session));
+                }
+            } else if !last_session_key.is_empty() || last_is_playing {
+                last_session_key.clear();
+                last_is_playing = false;
+                last_pos_sec = 0;
+                let _ = app.emit("media-session-updated", Option::<MediaSessionInfo>::None);
+            }
+        }
+    });
+}
+
+pub fn toggle_play_pause() {
+    let mut sent = false;
+    if let Ok(guard) = MEDIA_CACHE.lock() {
+        if let Some(ref session) = guard.active_session {
+            if let Ok(op) = session.TryTogglePlayPauseAsync() {
+                if let Ok(success) = op.get() {
+                    sent = success;
+                }
+            }
+        }
+        if !sent {
+            if let Some(ref mgr) = guard.manager {
+                if let Ok(session) = mgr.GetCurrentSession() {
+                    if let Ok(op) = session.TryTogglePlayPauseAsync() {
+                        if let Ok(success) = op.get() {
+                            sent = success;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if !sent {
+        unsafe {
+            // VK_MEDIA_PLAY_PAUSE = 0xB3 fallback
+            keybd_event(0xB3, 0, KEYBD_EVENT_FLAGS(0), 0);
+            keybd_event(0xB3, 0, KEYEVENTF_KEYUP, 0);
+        }
+    }
+    notify_media_changed();
+    std::thread::spawn(|| {
+        std::thread::sleep(Duration::from_millis(100));
+        notify_media_changed();
+    });
+}
+
+pub fn next_track() {
+    let mut sent = false;
+    if let Ok(guard) = MEDIA_CACHE.lock() {
+        if let Some(ref session) = guard.active_session {
+            if let Ok(op) = session.TrySkipNextAsync() {
+                if let Ok(success) = op.get() {
+                    sent = success;
+                }
+            }
+        }
+        if !sent {
+            if let Some(ref mgr) = guard.manager {
+                if let Ok(session) = mgr.GetCurrentSession() {
+                    if let Ok(op) = session.TrySkipNextAsync() {
+                        if let Ok(success) = op.get() {
+                            sent = success;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if !sent {
+        unsafe {
+            // VK_MEDIA_NEXT_TRACK = 0xB0 fallback
+            keybd_event(0xB0, 0, KEYBD_EVENT_FLAGS(0), 0);
+            keybd_event(0xB0, 0, KEYEVENTF_KEYUP, 0);
+        }
+    }
+    notify_media_changed();
+    std::thread::spawn(|| {
+        std::thread::sleep(Duration::from_millis(150));
+        notify_media_changed();
+        std::thread::sleep(Duration::from_millis(250));
+        notify_media_changed();
+    });
+}
+
+pub fn prev_track() {
+    let mut sent = false;
+    if let Ok(guard) = MEDIA_CACHE.lock() {
+        if let Some(ref session) = guard.active_session {
+            if let Ok(op) = session.TrySkipPreviousAsync() {
+                if let Ok(success) = op.get() {
+                    sent = success;
+                }
+            }
+        }
+        if !sent {
+            if let Some(ref mgr) = guard.manager {
+                if let Ok(session) = mgr.GetCurrentSession() {
+                    if let Ok(op) = session.TrySkipPreviousAsync() {
+                        if let Ok(success) = op.get() {
+                            sent = success;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if !sent {
+        unsafe {
+            // VK_MEDIA_PREV_TRACK = 0xB1 fallback
+            keybd_event(0xB1, 0, KEYBD_EVENT_FLAGS(0), 0);
+            keybd_event(0xB1, 0, KEYEVENTF_KEYUP, 0);
+        }
+    }
+    notify_media_changed();
+    std::thread::spawn(|| {
+        std::thread::sleep(Duration::from_millis(150));
+        notify_media_changed();
+        std::thread::sleep(Duration::from_millis(250));
+        notify_media_changed();
+    });
+}
+
+pub fn volume_up() {
+    unsafe {
+        // VK_VOLUME_UP = 0xAF
+        keybd_event(0xAF, 0, KEYBD_EVENT_FLAGS(0), 0);
+        keybd_event(0xAF, 0, KEYEVENTF_KEYUP, 0);
+    }
+}
+
+pub fn volume_down() {
+    unsafe {
+        // VK_VOLUME_DOWN = 0xAE
+        keybd_event(0xAE, 0, KEYBD_EVENT_FLAGS(0), 0);
+        keybd_event(0xAE, 0, KEYEVENTF_KEYUP, 0);
+    }
+}
+
+pub fn volume_mute() {
+    unsafe {
+        // VK_VOLUME_MUTE = 0xAD
+        keybd_event(0xAD, 0, KEYBD_EVENT_FLAGS(0), 0);
+        keybd_event(0xAD, 0, KEYEVENTF_KEYUP, 0);
+    }
+}
+
+pub fn seek_media(position_sec: u64) {
+    if let Ok(mut guard) = MEDIA_CACHE.lock() {
+        guard.last_fetch = None;
+        if let Some(ref mut session) = guard.cached_session {
+            session.current_sec = position_sec;
+            session.position_ms = Some(position_sec * 1000);
+        }
+        let ticks = (position_sec as i64) * 10_000_000;
+        let mut sought = false;
+        if let Some(ref session) = guard.active_session {
+            if session.TryChangePlaybackPositionAsync(ticks).is_ok() {
+                sought = true;
+            }
+        }
+        if !sought {
+            if let Some(ref mgr) = guard.manager {
+                if let Ok(session) = mgr.GetCurrentSession() {
+                    let _ = session.TryChangePlaybackPositionAsync(ticks);
+                }
+            }
+        }
+    }
+    notify_media_changed();
+}
+
+pub fn focus_media_app() {
+    let mut app_id = String::new();
+    let mut session_title = String::new();
+
+    if let Ok(guard) = MEDIA_CACHE.lock() {
+        if !guard.active_app_id.is_empty() || !guard.active_title.is_empty() {
+            app_id = guard.active_app_id.to_lowercase();
+            session_title = guard.active_title.to_lowercase();
+        } else if let Some(ref mgr) = guard.manager {
+            if let Ok(session) = mgr.GetCurrentSession() {
+                if let Ok(src) = session.SourceAppUserModelId() {
+                    app_id = src.to_string().to_lowercase();
+                }
+                if let Ok(media_props) = session.TryGetMediaPropertiesAsync().and_then(|op| op.get()) {
+                    if let Ok(t) = media_props.Title() {
+                        session_title = t.to_string().to_lowercase();
+                    }
+                }
+            }
+        }
+    }
+
+    struct FinderState {
+        app_id: String,
+        session_title: String,
+        found_hwnd: Option<HWND>,
+    }
+
+    let mut state = FinderState {
+        app_id,
+        session_title,
+        found_hwnd: None,
+    };
+
+    unsafe extern "system" fn enum_win(hwnd: HWND, lparam: LPARAM) -> BOOL {
+        let state = &mut *(lparam.0 as *mut FinderState);
+        if !IsWindow(Some(hwnd)).as_bool() || !IsWindowVisible(hwnd).as_bool() {
+            return BOOL(1);
+        }
+
+        let (exe_name, _) = get_window_exe_path(hwnd);
+        let exe_lower = exe_name.to_lowercase();
+
+        let mut title_buf = [0u16; 512];
+        let len = GetWindowTextW(hwnd, &mut title_buf);
+        let win_title = if len > 0 {
+            String::from_utf16_lossy(&title_buf[..len as usize]).to_lowercase()
+        } else {
+            String::new()
+        };
+
+        // Priority 1: Direct window title match with playing track/video (e.g. YouTube Music tab, PWA window, Spotify title)
+        let matched = if !state.session_title.is_empty() && !win_title.is_empty() && win_title.contains(&state.session_title) {
+            true
+        // Priority 2: Standalone dedicated media players (VLC, Spotify, PotPlayer, MPV, foobar2000, AIMP, MusicBee)
+        } else if exe_lower == "spotify.exe" || exe_lower == "vlc.exe" || exe_lower.starts_with("potplayer") || exe_lower == "mpv.exe" || exe_lower == "musicbee.exe" || exe_lower == "aimp.exe" {
+            true
+        // Priority 3: AppUserModelID / executable match (only if title matches or non-generic browser)
+        } else if !state.app_id.is_empty() && (state.app_id.contains(&exe_lower) || (!exe_lower.is_empty() && state.app_id.contains(&exe_lower.replace(".exe", "")))) {
+            let is_browser = exe_lower.contains("chrome") || exe_lower.contains("edge") || exe_lower.contains("brave") || exe_lower.contains("opera") || exe_lower.contains("vivaldi") || exe_lower.contains("firefox");
+            if is_browser {
+                win_title.contains("music") || win_title.contains("youtube") || win_title.contains("spotify") || win_title.contains("sound")
+            } else {
+                true
+            }
+        } else {
+            false
+        };
+
+        if matched {
+            state.found_hwnd = Some(hwnd);
+            return BOOL(0);
+        }
+
+        BOOL(1)
+    }
+
+    unsafe {
+        let _ = EnumWindows(Some(enum_win), LPARAM(&mut state as *mut _ as isize));
+    }
+
+    if let Some(hwnd) = state.found_hwnd {
+        focus_window(hwnd.0 as u64);
+    }
+}
+
+fn get_window_exe_path(hwnd: HWND) -> (String, String) {
+    use windows::Win32::System::Threading::{OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION};
+    use windows::Win32::System::ProcessStatus::K32GetModuleFileNameExW;
+
+    let mut pid: u32 = 0;
+    unsafe {
+        GetWindowThreadProcessId(hwnd, Some(&mut pid));
+    }
+    if pid == 0 {
+        return (String::new(), String::new());
+    }
+
+    unsafe {
+        if let Ok(process) = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, pid) {
+            if !process.0.is_null() {
+                let mut path_buf = [0u16; 1024];
+                let len = K32GetModuleFileNameExW(Some(process), None, &mut path_buf);
+                let _ = windows::Win32::Foundation::CloseHandle(process);
+                if len > 0 {
+                    let full_path = String::from_utf16_lossy(&path_buf[..len as usize]);
+                    let exe_name = std::path::Path::new(&full_path)
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .unwrap_or("")
+                        .to_string();
+                    return (exe_name, full_path);
+                }
+            }
+        }
+    }
+    (String::new(), String::new())
+}
+
+fn focus_window(hwnd_val: u64) {
+    use windows::Win32::UI::WindowsAndMessaging::{
+        BringWindowToTop, GetForegroundWindow, IsIconic, IsWindow, SetForegroundWindow,
+        ShowWindow, SW_RESTORE, SW_SHOW,
+    };
+    use windows::Win32::System::Threading::{AttachThreadInput, GetCurrentThreadId};
+
+    let hwnd = HWND(hwnd_val as *mut _);
+    unsafe {
+        if !IsWindow(Some(hwnd)).as_bool() {
+            return;
+        }
+
+        let fg_hwnd = GetForegroundWindow();
+        let fg_thread = GetWindowThreadProcessId(fg_hwnd, None);
+        let cur_thread = GetCurrentThreadId();
+
+        let attached = if fg_thread != 0 && fg_thread != cur_thread {
+            AttachThreadInput(cur_thread, fg_thread, true).as_bool()
+        } else {
+            false
+        };
+
+        if IsIconic(hwnd).as_bool() {
+            let _ = ShowWindow(hwnd, SW_RESTORE);
+        } else {
+            let _ = ShowWindow(hwnd, SW_SHOW);
+        }
+
+        let _ = SetForegroundWindow(hwnd);
+        let _ = BringWindowToTop(hwnd);
+
+        if attached {
+            let _ = AttachThreadInput(cur_thread, fg_thread, false);
+        }
+    }
+}
+
+
