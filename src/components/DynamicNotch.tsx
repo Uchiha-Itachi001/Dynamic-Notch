@@ -78,7 +78,7 @@ export const DynamicNotch: React.FC = () => {
   }, []);
 
   // Core expanded-card state (persistent, user-invoked)
-  const [expandedType, setExpandedType] = useState<"media" | "settings" | "bluetooth" | null>(null);
+  const [expandedType, setExpandedType] = useState<"media" | "settings" | "app-settings" | "bluetooth" | null>(null);
   const [splitViewMode, setSplitViewMode] = useState<"media_main" | "bt_main">("media_main");
   const [hoveredMetric, setHoveredMetric] = useState<"cpu" | "ram" | "down" | "up" | null>(null);
 
@@ -90,6 +90,8 @@ export const DynamicNotch: React.FC = () => {
       return true;
     }
   });
+  const [smoothTransitions, setSmoothTransitions] = useState(true);
+  const [showNetworkBadge, setShowNetworkBadge] = useState(true);
 
   useEffect(() => {
     try {
@@ -155,6 +157,14 @@ export const DynamicNotch: React.FC = () => {
     setIsHoverExpanded(false);
     tauriBridge.setNotchExpanded(true);
     setExpandedType("settings");
+  };
+
+  const handleExpandAppSettings = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (collapseTimeoutRef.current) { window.clearTimeout(collapseTimeoutRef.current); collapseTimeoutRef.current = null; }
+    setIsHoverExpanded(false);
+    tauriBridge.setNotchExpanded(true);
+    setExpandedType("app-settings");
   };
 
   const handleExpandBluetooth = (e?: React.MouseEvent) => {
@@ -543,7 +553,7 @@ export const DynamicNotch: React.FC = () => {
         className={`dynamic-notch-wrapper ${isShiftPeek ? "dynamic-notch-wrapper--peek-through" : ""}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onWheel={handleWheel}
+        onWheel={expandedType === "app-settings" ? undefined : handleWheel}
       >
 
         {/* ════════════════════════════════════════════════════════════════════
@@ -848,7 +858,52 @@ export const DynamicNotch: React.FC = () => {
           </div>
         )}
 
-        {/* ── CASE 2: Expanded System Stats / Settings ── */}
+        {/* ── CASE 2: App Settings ── */}
+        {expandedType === "app-settings" && (
+          <div key="app-settings" className="dynamic-notch dynamic-notch--app-settings"
+            onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+            <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
+            <div className="app-settings-card">
+              <div className="apple-full-header">
+                <div className="apple-full-actions">
+                  {hasMediaSession && (
+                    <button type="button" className="apple-action-icon apple-action-icon--music" onClick={() => setExpandedType("media")} title={`Now Playing: ${activeTitle}`}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" /></svg>
+                    </button>
+                  )}
+                  <button type="button" className="apple-action-icon apple-settings-action apple-settings-action--active" onClick={handleExpandAppSettings} data-tooltip="Settings" aria-label="Settings">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1-1.82l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
+                  </button>
+                  <button type="button" className={`apple-action-pill ${expandOnHover ? "apple-action-pill--on" : ""}`} onClick={() => setExpandOnHover((value) => !value)} aria-label="Hover Expand"><span className="apple-action-dot" /><span>HOVER</span></button>
+                  <button type="button" className="apple-exit-icon" onClick={() => tauriBridge.exitApp()} data-tooltip="Exit App" aria-label="Exit App"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0" /><line x1="12" y1="2" x2="12" y2="12" /></svg></button>
+                </div>
+              </div>
+
+              <div className="app-settings-title"><strong>Settings</strong><span>Shape your notch</span></div>
+              <div className="app-settings-section-label">Interface</div>
+              <div className="app-settings-list">
+                <div className="app-settings-row">
+                  <div className="app-settings-row-icon app-settings-row-icon--green">↗</div>
+                  <div className="app-settings-row-copy"><strong>Expand on hover</strong><span>Open the notch when your pointer arrives</span></div>
+                  <button type="button" className={`app-settings-toggle ${expandOnHover ? "app-settings-toggle--on" : ""}`} onClick={() => setExpandOnHover((value) => !value)} aria-pressed={expandOnHover} aria-label="Toggle expand on hover"><span /></button>
+                </div>
+                <div className="app-settings-row">
+                  <div className="app-settings-row-icon app-settings-row-icon--blue">✦</div>
+                  <div className="app-settings-row-copy"><strong>Smooth transitions</strong><span>Keep state changes soft and fluid</span></div>
+                  <button type="button" className={`app-settings-toggle ${smoothTransitions ? "app-settings-toggle--on" : ""}`} onClick={() => setSmoothTransitions((value) => !value)} aria-pressed={smoothTransitions} aria-label="Toggle smooth transitions"><span /></button>
+                </div>
+                <div className="app-settings-row">
+                  <div className="app-settings-row-icon app-settings-row-icon--cyan">◉</div>
+                  <div className="app-settings-row-copy"><strong>Network badge</strong><span>Show connection state in the ring center</span></div>
+                  <button type="button" className={`app-settings-toggle ${showNetworkBadge ? "app-settings-toggle--on" : ""}`} onClick={() => setShowNetworkBadge((value) => !value)} aria-pressed={showNetworkBadge} aria-label="Toggle network badge"><span /></button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        )}
+
+        {/* ── CASE 3: Expanded System Stats / Settings ── */}
         {expandedType === "settings" && (() => {
           const netType = systemMetrics?.net_type?.toLowerCase() ?? "wifi";
           const isDisconnected = netType === "disconnected" || netType === "none";
@@ -875,7 +930,7 @@ export const DynamicNotch: React.FC = () => {
                         </svg>
                       </button>
                     )}
-                    <button type="button" className="apple-action-icon apple-settings-action" onClick={() => tauriBridge.openWindowsSettings()} data-tooltip="Settings" aria-label="Settings">
+                    <button type="button" className="apple-action-icon apple-settings-action" onClick={handleExpandAppSettings} data-tooltip="Settings" aria-label="Settings">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="3" />
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a2 2 0 0 1 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />

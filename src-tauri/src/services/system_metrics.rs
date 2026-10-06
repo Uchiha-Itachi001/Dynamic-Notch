@@ -25,6 +25,11 @@ struct NetState {
     last_sent_speed: u64,
 }
 
+struct ConnectivityState {
+    checked_at: Option<Instant>,
+    reachable: bool,
+}
+
 static CPU_STATE: Mutex<CpuState> = Mutex::new(CpuState {
     last_idle: 0,
     last_kernel: 0,
@@ -38,6 +43,11 @@ static NET_STATE: Mutex<NetState> = Mutex::new(NetState {
     last_time: None,
     last_recv_speed: 0,
     last_sent_speed: 0,
+});
+
+static CONNECTIVITY_STATE: Mutex<ConnectivityState> = Mutex::new(ConnectivityState {
+    checked_at: None,
+    reachable: false,
 });
 
 fn filetime_to_u64(ft: &FILETIME) -> u64 {
@@ -57,13 +67,27 @@ fn format_speed(bytes_per_sec: u64) -> String {
 }
 
 fn has_internet_connection() -> bool {
-    ["1.1.1.1:53", "8.8.8.8:53"].iter().any(|address| {
+    let now = Instant::now();
+    if let Ok(state) = CONNECTIVITY_STATE.lock() {
+        if state.checked_at.is_some_and(|checked_at| now.duration_since(checked_at).as_secs() < 3) {
+            return state.reachable;
+        }
+    }
+
+    let reachable = ["1.1.1.1:443", "8.8.8.8:443"].iter().any(|address| {
         address
             .parse::<SocketAddr>()
             .ok()
-            .and_then(|target| TcpStream::connect_timeout(&target, Duration::from_millis(250)).ok())
+            .and_then(|target| TcpStream::connect_timeout(&target, Duration::from_millis(1500)).ok())
             .is_some()
-    })
+    });
+
+    if let Ok(mut state) = CONNECTIVITY_STATE.lock() {
+        state.checked_at = Some(now);
+        state.reachable = reachable;
+    }
+
+    reachable
 }
 
 fn get_network_speeds() -> (u64, u64, String, String, String) {

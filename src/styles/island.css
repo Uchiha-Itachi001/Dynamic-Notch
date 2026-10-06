@@ -1208,6 +1208,218 @@
   animation: notch-card-expand 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
+.dynamic-notch--app-settings {
+  width: 348px;
+  height: 148px;
+  padding: 12px 16px 11px;
+  border-bottom-left-radius: 28px;
+  border-bottom-right-radius: 28px;
+  background: #000000 !important;
+  cursor: default;
+  box-shadow: none !important;
+  animation: notch-card-expand 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.app-settings-card {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  animation: notchCardContentFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.app-settings-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  min-height: 13px;
+  margin: 2px 0 3px;
+}
+
+.app-settings-title strong { color: #ffffff; font-size: 13px; line-height: 1; }
+.app-settings-title span { color: rgba(235, 235, 245, 0.38); font-size: 7px; line-height: 1; }
+
+.app-settings-card .apple-settings-action svg { display: none; }
+.app-settings-card .apple-settings-action::before {
+  color: currentColor;
+  content: "⚙";
+  font-size: 13px;
+  line-height: 1;
+}
+
+.app-settings-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  height: 28px;
+}
+
+.app-settings-eyebrow,
+.app-settings-section-label {
+  color: rgba(235, 235, 245, 0.42);
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.app-settings-header h2 {
+  margin: 4px 0 0;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+.app-settings-close {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.07);
+  color: rgba(255, 255, 255, 0.65);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
+}
+
+.app-settings-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  transform: rotate(90deg);
+}
+
+.app-settings-section-label {
+  margin: 0 0 3px;
+}
+
+.app-settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.app-settings-row {
+  display: flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 2px 7px 2px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.app-settings-row-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.app-settings-row-icon--green { background: rgba(48, 209, 88, 0.14); color: #30d158; }
+.app-settings-row-icon--blue { background: rgba(10, 132, 255, 0.14); color: #0a84ff; }
+.app-settings-row-icon--cyan { background: rgba(56, 189, 248, 0.14); color: #38bdf8; }
+
+.app-settings-row-copy {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-settings-row-copy strong {
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.app-settings-row-copy span {
+  overflow: hidden;
+  color: rgba(235, 235, 245, 0.42);
+  font-size: 7px;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.app-settings-toggle {
+  position: relative;
+  width: 25px;
+  height: 14px;
+  flex-shrink: 0;
+  padding: 2px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+
+.app-settings-toggle span {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.app-settings-toggle--on { background: #30d158; }
+.app-settings-toggle--on span { transform: translateX(11px); background: #ffffff; }
+
+.app-settings-section-label + .app-settings-list + .app-settings-section-label {
+  margin-top: 6px;
+}
+
+.app-settings-about {
+  display: flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.app-settings-about-mark {
+  width: 17px;
+  height: 17px;
+  margin-right: 6px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, #38bdf8, #8b5cf6);
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.app-settings-about div {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.app-settings-about strong { font-size: 8.5px; line-height: 1; }
+.app-settings-about span { color: rgba(235, 235, 245, 0.42); font-size: 7px; line-height: 1; }
+.app-settings-about small { color: rgba(235, 235, 245, 0.35); font-size: 7px; }
+
 .notch-expanded-settings-card {
   position: relative;
   z-index: 2;
@@ -1471,6 +1683,12 @@
   box-shadow: 0 0 8px rgba(48, 209, 88, 0.4);
   color: #ffffff;
   transform: scale(1.1);
+}
+
+.apple-settings-action--active {
+  color: #30d158;
+  background: rgba(48, 209, 88, 0.16);
+  border-color: rgba(48, 209, 88, 0.35);
 }
 
 .apple-exit-icon {
