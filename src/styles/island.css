@@ -348,7 +348,11 @@
 }
 
 .dynamic-notch:hover .notch-stream-comet {
-  filter: drop-shadow(0 0 8px var(--wave-color, rgba(56, 189, 248, 0.95)));
+  filter: none;
+}
+
+.dynamic-notch:hover {
+  box-shadow: none !important;
 }
 
 .dynamic-notch--compact:active,
@@ -534,7 +538,7 @@
 /* Middle: Clean Song Title Display */
 .notch-activity-middle {
   position: relative;
-  display: flex;
+  display: grid;
   align-items: center;
   justify-content: center;
   flex: 1;
@@ -546,31 +550,42 @@
 }
 
 .notch-swap-layer {
-  position: absolute;
-  inset: 0;
+  position: relative;
+  grid-area: 1 / 1;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
-  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+  min-width: 0;
+  z-index: 1;
+  transition: opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1), transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s linear 0.28s;
   pointer-events: none;
 }
 
 .notch-swap-layer--active {
   opacity: 1;
   transform: translateY(0) scale(1);
+  visibility: visible;
+  transition-delay: 0s;
   pointer-events: auto;
 }
 
 .notch-swap-layer--title.notch-swap-layer--hidden {
   opacity: 0;
   transform: translateY(-8px) scale(0.96);
+  visibility: hidden;
 }
 
 .notch-swap-layer--volume.notch-swap-layer--hidden {
   opacity: 0;
   transform: translateY(8px) scale(0.96);
+  visibility: hidden;
+}
+
+.dynamic-notch--volume-feedback:hover {
+  height: 26px !important;
+  padding-bottom: 0 !important;
 }
 
 .notch-activity-title {

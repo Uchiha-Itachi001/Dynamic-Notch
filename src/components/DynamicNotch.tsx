@@ -1277,7 +1277,7 @@ export const DynamicNotch: React.FC = () => {
 
         {/* ── CASE 6: Media Compact (Active, single activity) ── */}
         {showMediaCompact && (
-          <div key="compact-media" className="dynamic-notch dynamic-notch--activity"
+            <div key="compact-media" className={`dynamic-notch dynamic-notch--activity ${volumeFeedbackVisible ? "dynamic-notch--volume-feedback" : ""}`}
             onClick={(e) => handleExpandMedia(e)}
             style={{
               ["--wave-color" as any]: trackTheme.waveColor,
@@ -1296,9 +1296,10 @@ export const DynamicNotch: React.FC = () => {
                 </div>
               </div>
               <div className="notch-activity-middle">
-                {!volumeFeedbackVisible ? (
+                <div className={`notch-swap-layer notch-swap-layer--title ${volumeFeedbackVisible ? "notch-swap-layer--hidden" : "notch-swap-layer--active"}`}>
                   <span className="notch-activity-title">{activeTitle}</span>
-                ) : (
+                </div>
+                <div className={`notch-swap-layer notch-swap-layer--volume ${volumeFeedbackVisible ? "notch-swap-layer--active" : "notch-swap-layer--hidden"}`}>
                   <div className="notch-inline-volume">
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
                       <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" />
@@ -1310,7 +1311,7 @@ export const DynamicNotch: React.FC = () => {
                     </div>
                     <span className="notch-inline-volume-text">{inlineVolumePct}%</span>
                   </div>
-                )}
+                </div>
               </div>
               <div className="notch-activity-right">
                 <div className={`notch-equalizer-wave ${!activeIsPlaying ? "notch-equalizer-wave--paused" : ""}`}>
@@ -1324,7 +1325,7 @@ export const DynamicNotch: React.FC = () => {
 
         {/* ── CASE 7: Idle Compact (Clock + Battery) ── */}
         {showIdleCompact && (
-          <div key="compact-idle" className="dynamic-notch dynamic-notch--compact"
+          <div key="compact-idle" className={`dynamic-notch dynamic-notch--compact ${volumeFeedbackVisible ? "dynamic-notch--volume-feedback" : ""}`}
             onClick={handleExpandSettings}
             style={{ ["--wave-color" as any]: "#38bdf8", ["--wave-glow" as any]: "rgba(56,189,248,0.45)", cursor: "pointer" }}>
             <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
