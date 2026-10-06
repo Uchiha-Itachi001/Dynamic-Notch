@@ -1174,11 +1174,12 @@ export const DynamicNotch: React.FC = () => {
               <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
               {renderLightBorder()}{renderNotchBgCover(splitViewMode === "media_main")}
               {splitViewMode === "media_main" ? (
-                <div className="notch-split-media-layout">
+                <div className="notch-split-media-layout" title={activeTitle}>
                   <div className="notch-album-thumb">
                     <img src={liveMedia?.album_art_base64 || "/albumcover-placeholder.png"} alt="Album Art"
                       onError={(e) => { (e.target as HTMLImageElement).src = "/albumcover-placeholder.png"; }} />
                   </div>
+                  <span className="notch-split-media-name">{activeTitle}</span>
                   <div className={`notch-equalizer-wave ${!activeIsPlaying ? "notch-equalizer-wave--paused" : ""}`}>
                     <span className="notch-wave-bar" /><span className="notch-wave-bar" /><span className="notch-wave-bar" /><span className="notch-wave-bar" />
                   </div>
@@ -1207,7 +1208,7 @@ export const DynamicNotch: React.FC = () => {
               style={{
                 ["--wave-color" as any]: splitViewMode === "media_main" ? "#22c55e" : trackTheme.waveColor,
                 ["--wave-glow" as any]: splitViewMode === "media_main" ? "rgba(34,197,94,0.45)" : trackTheme.glowColor,
-              }} title="Switch active card">
+              }} title={splitViewMode === "media_main" ? "Switch active card" : activeTitle}>
               <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
               {renderLightBorder()}{renderNotchBgCover(splitViewMode !== "media_main")}
               {splitViewMode === "media_main" ? (
@@ -1295,10 +1296,9 @@ export const DynamicNotch: React.FC = () => {
                 </div>
               </div>
               <div className="notch-activity-middle">
-                <div className={`notch-swap-layer notch-swap-layer--title ${volumeFeedbackVisible ? "notch-swap-layer--hidden" : "notch-swap-layer--active"}`}>
+                {!volumeFeedbackVisible ? (
                   <span className="notch-activity-title">{activeTitle}</span>
-                </div>
-                <div className={`notch-swap-layer notch-swap-layer--volume ${volumeFeedbackVisible ? "notch-swap-layer--active" : "notch-swap-layer--hidden"}`}>
+                ) : (
                   <div className="notch-inline-volume">
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round">
                       <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" />
@@ -1310,7 +1310,7 @@ export const DynamicNotch: React.FC = () => {
                     </div>
                     <span className="notch-inline-volume-text">{inlineVolumePct}%</span>
                   </div>
-                </div>
+                )}
               </div>
               <div className="notch-activity-right">
                 <div className={`notch-equalizer-wave ${!activeIsPlaying ? "notch-equalizer-wave--paused" : ""}`}>
