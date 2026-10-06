@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { CalendarDays, LayoutDashboard, Music2 } from "lucide-react";
 import { useSystemMetrics } from "../hooks/useSystemMetrics";
 import { useMediaSession } from "../hooks/useMediaSession";
 import { useBluetooth } from "../hooks/useBluetooth";
@@ -7,6 +8,7 @@ import { useSystemEvents } from "../hooks/useSystemEvents";
 import { tauriBridge } from "../services/tauriBridge";
 import { calcNetPercent, formatBytes, formatRate, formatTime, getBatteryColor, getTrackColor } from "../services/notchFormatters";
 import { NotchOsd } from "./NotchOsd";
+import { CalendarPanel } from "./CalendarPanel";
 
 /* ─── Priority ordering for OSD states ──────────────────────────────────────
    Higher priority states take over the notch, lower ones queue/dismiss.
@@ -80,7 +82,7 @@ export const DynamicNotch: React.FC = () => {
   }, []);
 
   // Core expanded-card state (persistent, user-invoked)
-  const [expandedType, setExpandedType] = useState<"media" | "settings" | "app-settings" | "bluetooth" | null>(null);
+  const [expandedType, setExpandedType] = useState<"media" | "settings" | "app-settings" | "calendar" | "bluetooth" | null>(null);
   const [splitViewMode, setSplitViewMode] = useState<"media_main" | "bt_main">("media_main");
   const [hoveredMetric, setHoveredMetric] = useState<"cpu" | "ram" | "down" | "up" | null>(null);
 
@@ -525,6 +527,15 @@ export const DynamicNotch: React.FC = () => {
           dismissDownload={dismissDownload}
         />
 
+        {expandedType === "calendar" && (
+          <div key="calendar" className="dynamic-notch dynamic-notch--ios-active dynamic-notch--calendar"
+            onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+            <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
+            {renderLightBorder()}
+            <CalendarPanel />
+          </div>
+        )}
+
         {/* ════════════════════════════════════════════════════════════════════
             EXPANDED CARDS (persistent, user-invoked)
             ════════════════════════════════════════════════════════════════════ */}
@@ -616,16 +627,26 @@ export const DynamicNotch: React.FC = () => {
             <div className="app-settings-card">
               <div className="apple-full-header">
                 <div className="apple-full-actions">
-                  {hasMediaSession && (
-                    <button type="button" className="apple-action-icon apple-action-icon--music" onClick={() => setExpandedType("media")} title={`Now Playing: ${activeTitle}`}>
-                      <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" /></svg>
-                    </button>
-                  )}
+                    <div className="apple-header-nav">
+                      {hasMediaSession && (
+                        <button type="button" className="apple-action-icon apple-action-icon--music" onClick={() => setExpandedType("media")} title={`Now Playing: ${activeTitle}`}>
+                          <Music2 size={12} strokeWidth={2.2} />
+                        </button>
+                      )}
+                      <button type="button" className="apple-action-icon apple-dashboard-action" onClick={() => setExpandedType("settings")} data-tooltip="Dashboard" aria-label="Dashboard">
+                        <LayoutDashboard size={12} strokeWidth={2.1} />
+                      </button>
+                      <button type="button" className="apple-action-icon apple-calendar-action" onClick={() => setExpandedType("calendar")} data-tooltip="Calendar" aria-label="Calendar">
+                        <CalendarDays size={12} strokeWidth={2.1} />
+                      </button>
+                    </div>
+                    <div className="apple-header-controls">
                   <button type="button" className="apple-action-icon apple-settings-action apple-settings-action--active" onClick={handleExpandAppSettings} data-tooltip="Settings" aria-label="Settings">
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1-1.82l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
                   </button>
                   <button type="button" className={`apple-action-pill ${expandOnHover ? "apple-action-pill--on" : ""}`} onClick={() => setExpandOnHover((value) => !value)} aria-label="Hover Expand"><span className="apple-action-dot" /><span>HOVER</span></button>
                   <button type="button" className="apple-exit-icon" onClick={() => tauriBridge.exitApp()} data-tooltip="Exit App" aria-label="Exit App"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0" /><line x1="12" y1="2" x2="12" y2="12" /></svg></button>
+                    </div>
                 </div>
               </div>
 
@@ -668,18 +689,25 @@ export const DynamicNotch: React.FC = () => {
               <div className="notch-expanded-settings-card" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
                 <div className="apple-full-header">
                   <div className="apple-full-actions">
-                    {hasMediaSession && (
+                    <div className="apple-header-nav">
+                      {hasMediaSession && (
                       <button
                         type="button"
                         className="apple-action-icon apple-action-icon--music"
                         onClick={() => setExpandedType("media")}
                         title={`Now Playing: ${activeTitle}`}
                       >
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z" />
-                        </svg>
+                        <Music2 size={12} strokeWidth={2.2} />
                       </button>
-                    )}
+                      )}
+                      <button type="button" className="apple-action-icon apple-dashboard-action apple-dashboard-action--active" onClick={() => setExpandedType("settings")} data-tooltip="Dashboard" aria-label="Dashboard">
+                        <LayoutDashboard size={12} strokeWidth={2.1} />
+                      </button>
+                      <button type="button" className="apple-action-icon apple-calendar-action" onClick={() => setExpandedType("calendar")} data-tooltip="Calendar" aria-label="Calendar">
+                        <CalendarDays size={12} strokeWidth={2.1} />
+                      </button>
+                    </div>
+                    <div className="apple-header-controls">
                     <button type="button" className="apple-action-icon apple-settings-action" onClick={handleExpandAppSettings} data-tooltip="Settings" aria-label="Settings">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="3" />
@@ -695,6 +723,7 @@ export const DynamicNotch: React.FC = () => {
                         <path d="M18.36 6.64a9 9 0 1 1-12.73 0" /><line x1="12" y1="2" x2="12" y2="12" />
                       </svg>
                     </button>
+                    </div>
                   </div>
                 </div>
                 {/* Body: Concentric Rings + Telemetry Cards */}

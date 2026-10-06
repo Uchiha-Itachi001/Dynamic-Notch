@@ -1211,13 +1211,18 @@
 .dynamic-notch--app-settings {
   width: 348px;
   height: 148px;
-  padding: 12px 16px 11px;
+  padding: 4px 16px 8px;
   border-bottom-left-radius: 28px;
   border-bottom-right-radius: 28px;
   background: #000000 !important;
   cursor: default;
   box-shadow: none !important;
   animation: notch-card-expand 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.dynamic-notch--app-settings > .app-settings-card > .apple-full-header,
+.dynamic-notch--app-settings .app-settings-title {
+  display: none;
 }
 
 .app-settings-card {
@@ -1433,6 +1438,113 @@
   user-select: none;
 }
 
+.dynamic-notch--calendar {
+  overflow: hidden;
+}
+
+.calendar-panel {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 0 10px 8px;
+  color: rgba(245, 247, 250, 0.94);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  animation: notchCardContentFadeIn var(--glace-duration-base) var(--glace-ease-spring) both;
+  user-select: none;
+}
+
+.calendar-panel-header,
+.calendar-panel-heading,
+.calendar-panel-actions,
+.calendar-month-toolbar,
+.calendar-month-actions,
+.calendar-agenda-top {
+  display: flex;
+  align-items: center;
+}
+
+.calendar-panel-header {
+  justify-content: space-between;
+  height: 23px;
+}
+
+.calendar-panel-heading { gap: 7px; }
+.calendar-panel-heading > div { display: flex; flex-direction: column; gap: 2px; }
+.calendar-panel-heading strong { color: #fff; font-size: 11px; line-height: 1; letter-spacing: -0.01em; }
+.calendar-panel-heading span:not(.calendar-panel-icon) { color: rgba(235, 235, 245, 0.42); font-size: 7px; line-height: 1; }
+
+.calendar-panel-icon {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 1px solid rgba(48, 209, 88, 0.25);
+  border-radius: 7px;
+  background: rgba(48, 209, 88, 0.12);
+  color: #30d158;
+  box-shadow: 0 0 12px rgba(48, 209, 88, 0.12);
+}
+
+.calendar-panel-actions { gap: 5px; }
+.calendar-icon-button,
+.calendar-month-actions button {
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(235, 235, 245, 0.66);
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
+}
+
+.calendar-icon-button { width: 20px; height: 20px; font-size: 10px; font-weight: 600; }
+.calendar-icon-button:hover,
+.calendar-month-actions button:hover { border-color: rgba(48, 209, 88, 0.4); background: rgba(48, 209, 88, 0.14); color: #30d158; }
+
+.calendar-panel-body {
+  display: block;
+  min-height: 0;
+  flex: 1;
+  padding-top: 0;
+}
+
+.calendar-month-view { min-width: 0; }
+.calendar-month-toolbar { justify-content: space-between; height: 17px; }
+.calendar-month-toolbar > strong { color: rgba(255, 255, 255, 0.9); font-size: 10px; font-weight: 650; }
+.calendar-month-actions { gap: 3px; }
+.calendar-month-actions button { width: 18px; height: 17px; padding: 0; }
+.calendar-month-actions .calendar-today-button { width: auto; padding: 0 5px; color: rgba(235, 235, 245, 0.6); font-size: 7px; }
+
+.calendar-weekdays,
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
+.calendar-weekdays { margin-top: 1px; color: rgba(235, 235, 245, 0.34); font-size: 8px; font-weight: 650; }
+.calendar-grid { row-gap: 1px; margin-top: 1px; }
+.calendar-day { position: relative; display: grid; width: 26px; height: 14px; margin: auto; place-items: center; border: 0; border-radius: 4px; background: transparent; color: rgba(245, 247, 250, 0.75); font-size: 9px; cursor: pointer; }
+.calendar-day:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.calendar-day--muted { color: rgba(235, 235, 245, 0.22); }
+.calendar-day--today { color: #30d158; font-weight: 700; }
+.calendar-day--selected { background: #30d158; color: #07110a; font-weight: 700; box-shadow: 0 0 8px rgba(48, 209, 88, 0.34); }
+.calendar-day--selected.calendar-day--today { color: #07110a; }
+.calendar-day i { position: absolute; bottom: 0; width: 2px; height: 2px; border-radius: 50%; background: #ff9f0a; }
+
+.calendar-agenda { position: relative; display: flex; flex-direction: column; min-width: 0; padding: 4px 0 0 9px; border-left: 1px solid rgba(255, 255, 255, 0.08); }
+.calendar-agenda-top { justify-content: space-between; color: #30d158; font-size: 7px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.calendar-agenda-top button { display: grid; width: 18px; height: 18px; padding: 0; place-items: center; border: 1px solid rgba(48, 209, 88, 0.25); border-radius: 6px; background: rgba(48, 209, 88, 0.1); color: #30d158; cursor: pointer; }
+.calendar-agenda > strong { margin-top: 9px; color: rgba(255, 255, 255, 0.9); font-size: 9px; line-height: 1.25; }
+.calendar-event { display: flex; gap: 6px; margin-top: 13px; padding: 7px 6px; border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 7px; background: rgba(255, 255, 255, 0.045); }
+.calendar-event-dot { flex: 0 0 4px; width: 4px; height: 4px; margin-top: 2px; border-radius: 50%; background: #ff9f0a; box-shadow: 0 0 5px rgba(255, 159, 10, 0.65); }
+.calendar-event div { display: flex; min-width: 0; flex-direction: column; gap: 4px; }
+.calendar-event strong { overflow: hidden; color: rgba(255, 255, 255, 0.88); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-event span { display: flex; align-items: center; gap: 3px; color: rgba(235, 235, 245, 0.48); font-size: 7px; white-space: nowrap; }
+.calendar-empty-state { display: flex; flex-direction: column; gap: 4px; margin-top: 16px; padding: 12px 8px; border: 1px dashed rgba(255, 255, 255, 0.12); border-radius: 9px; color: rgba(235, 235, 245, 0.42); }
+.calendar-empty-state strong { color: rgba(255, 255, 255, 0.72); font-size: 9px; }
+.calendar-empty-state span { font-size: 8px; }
+.calendar-agenda-foot { margin-top: auto; color: rgba(235, 235, 245, 0.3); font-size: 7px; line-height: 1.35; }
+
 /* ─── Row 1: Header Bar (Top) ─── */
 .apple-full-header {
   display: flex;
@@ -1511,8 +1623,21 @@
 .apple-full-actions {
   display: flex;
   align-items: center;
-  gap: 5px;
+  justify-content: space-between;
+  gap: 8px;
   margin-left: auto;
+  width: 100%;
+}
+
+.apple-header-nav,
+.apple-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.apple-header-nav {
+  margin-right: auto;
 }
 
 .apple-settings-action,
@@ -1647,7 +1772,7 @@
 .apple-action-icon {
   width: 19px;
   height: 19px;
-  border-radius: 50%;
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.08);
   border: 0.5px solid rgba(255, 255, 255, 0.1);
   color: rgba(235, 235, 245, 0.7);
@@ -1667,22 +1792,28 @@
   transform: scale(1.08);
 }
 
+.apple-settings-action:hover {
+  transform: none;
+  box-shadow: 0 0 7px rgba(48, 209, 88, 0.3);
+}
+
 .apple-action-icon:active {
   transform: scale(0.9);
 }
 
 .apple-action-icon--music {
   color: #30d158;
-  background: rgba(48, 209, 88, 0.12);
-  border-color: rgba(48, 209, 88, 0.28);
+  background: transparent;
+  border-color: transparent;
 }
 
 .apple-action-icon--music:hover {
-  background: rgba(48, 209, 88, 0.24);
-  border-color: rgba(48, 209, 88, 0.55);
-  box-shadow: 0 0 8px rgba(48, 209, 88, 0.4);
-  color: #ffffff;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: #30d158;
   transform: scale(1.1);
+  filter: drop-shadow(0 0 5px rgba(48, 209, 88, 0.65));
 }
 
 .apple-settings-action--active {
@@ -1691,10 +1822,17 @@
   border-color: rgba(48, 209, 88, 0.35);
 }
 
+.apple-dashboard-action--active {
+  color: #30d158;
+  background: rgba(48, 209, 88, 0.16);
+  border-color: rgba(48, 209, 88, 0.35);
+  box-shadow: 0 0 7px rgba(48, 209, 88, 0.22);
+}
+
 .apple-exit-icon {
   width: 19px;
   height: 19px;
-  border-radius: 50%;
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.08);
   border: 0.5px solid rgba(255, 255, 255, 0.1);
   color: rgba(235, 235, 245, 0.65);
@@ -1711,7 +1849,8 @@
   background: rgba(255, 69, 58, 0.25);
   border-color: rgba(255, 69, 58, 0.5);
   color: #ff453a;
-  transform: scale(1.1);
+  transform: none;
+  box-shadow: 0 0 7px rgba(255, 69, 58, 0.3);
 }
 
 .apple-exit-icon:active {
