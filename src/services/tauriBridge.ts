@@ -190,6 +190,25 @@ export const tauriBridge = {
     }
   },
 
+  getAutoStartStatus: async (): Promise<boolean> => {
+    try {
+      return await invoke<boolean>("get_auto_start_status");
+    } catch (e) {
+      console.error("getAutoStartStatus error:", e);
+      return false;
+    }
+  },
+
+  setAutoStart: async (enabled: boolean): Promise<boolean> => {
+    try {
+      await invoke("set_auto_start", { enabled });
+      return true;
+    } catch (e) {
+      console.error("setAutoStart error:", e);
+      return false;
+    }
+  },
+
   // System event listeners (Rust → Frontend)
   onVolumeChanged: (callback: (payload: { volume_pct: number; muted: boolean }) => void): Promise<UnlistenFn> => {
     return listen<{ volume_pct: number; muted: boolean }>("volume-changed", (event) => {

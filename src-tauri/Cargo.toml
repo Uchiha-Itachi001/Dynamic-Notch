@@ -1,6 +1,6 @@
 [package]
 name = "notch"
-version = "0.1.0"
+version = "0.2.0"
 description = "Dynamic Notch — Standalone Windows Dynamic Island"
 authors = ["Pankoj Roy"]
 edition = "2021"

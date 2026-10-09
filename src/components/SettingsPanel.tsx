@@ -1,7 +1,8 @@
-import { Check, Keyboard, MousePointer2, Palette } from "lucide-react";
-import { useState } from "react";
+import { Check, Keyboard, MousePointer2, Palette, Power } from "lucide-react";
+import { useEffect, useState } from "react";
+import { tauriBridge } from "../services/tauriBridge";
 
-type SettingsSection = "interaction" | "appearance" | "peek";
+type SettingsSection = "interaction" | "appearance" | "peek" | "startup";
 type MediaBackgroundMode = "black" | "cover";
 type PeekKey = "Shift" | "Control" | " " | "Tab";
 
@@ -17,7 +18,8 @@ interface SettingsPanelProps {
 const sections: Array<{ id: SettingsSection; label: string; icon: typeof MousePointer2 }> = [
   { id: "interaction", label: "Behavior", icon: MousePointer2 },
   { id: "appearance", label: "Surface", icon: Palette },
-  { id: "peek", label: "Peek key", icon: Keyboard },
+  { id: "peek", label: "Peek", icon: Keyboard },
+  { id: "startup", label: "Startup", icon: Power },
 ];
 
 const peekKeys: Array<{ value: PeekKey; label: string }> = [
@@ -36,6 +38,32 @@ export function SettingsPanel({
   onPeekKeyChange,
 }: SettingsPanelProps) {
   const [section, setSection] = useState<SettingsSection>("interaction");
+  const [autoStart, setAutoStart] = useState<boolean>(false);
+  const [autoStartLoading, setAutoStartLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    tauriBridge.getAutoStartStatus().then((status) => {
+      if (isMounted) {
+        setAutoStart(status);
+        setAutoStartLoading(false);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleToggleAutoStart = async () => {
+    if (autoStartLoading) return;
+    const next = !autoStart;
+    setAutoStart(next);
+    const success = await tauriBridge.setAutoStart(next);
+    if (!success) {
+      setAutoStart(!next);
+    }
+  };
+
   const activeSection = sections.find((item) => item.id === section) ?? sections[0];
   const ActiveIcon = activeSection.icon;
 
@@ -43,7 +71,7 @@ export function SettingsPanel({
     <div className="settings-console">
       <div className="settings-console-topline">
         <div className="settings-console-brand">
-          <span className="settings-console-mark"><img src="/app-icon.png" alt="" /></span>
+          <span className="settings-console-mark"><img src="/icon.png" alt="Notch" /></span>
           <div><strong>Notch settings</strong><span>CONTROL SURFACE</span></div>
         </div>
         <span className="settings-console-live"><i /> LIVE</span>
@@ -58,7 +86,13 @@ export function SettingsPanel({
       </nav>
 
       <section className="settings-console-stage">
-        <div className={`settings-console-stage-icon settings-console-stage-icon--${section}`}><ActiveIcon size={18} strokeWidth={2} /></div>
+        <div className={`settings-console-stage-icon settings-console-stage-icon--${section}`}>
+          {section === "startup" ? (
+            <img src="/icon.png" alt="Notch" className="settings-console-stage-logo" />
+          ) : (
+            <ActiveIcon size={18} strokeWidth={2} />
+          )}
+        </div>
         {section === "interaction" && (
           <div className="settings-console-detail">
             <div><span className="settings-console-kicker">BEHAVIOR</span><strong>Expand on hover</strong><small>Open the notch when the pointer arrives.</small></div>
@@ -80,6 +114,25 @@ export function SettingsPanel({
             <div className="settings-console-key-row" role="group" aria-label="Peek-through key">
               {peekKeys.map(({ value, label }) => <button type="button" key={label} className={peekKey === value ? "settings-console-key--active" : ""} onClick={() => onPeekKeyChange(value)} aria-pressed={peekKey === value}>{label}</button>)}
             </div>
+          </div>
+        )}
+        {section === "startup" && (
+          <div className="settings-console-detail">
+            <div>
+              <span className="settings-console-kicker">WINDOWS AUTOSTART</span>
+              <strong>Run Notch on startup</strong>
+              <small>{autoStartLoading ? "Checking registry..." : autoStart ? "Runs automatically at Windows boot." : "Disabled — manual launch only."}</small>
+            </div>
+            <button
+              type="button"
+              className={`settings-console-switch ${autoStart ? "settings-console-switch--on" : ""}`}
+              onClick={handleToggleAutoStart}
+              disabled={autoStartLoading}
+              aria-pressed={autoStart}
+              aria-label="Toggle Windows startup"
+            >
+              <span />
+            </button>
           </div>
         )}
       </section>

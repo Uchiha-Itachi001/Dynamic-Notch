@@ -1279,8 +1279,8 @@
 .settings-console-live { gap: 3px; color: rgba(48, 209, 88, 0.9); font-size: 6px; font-weight: 750; letter-spacing: 0.08em; }
 .settings-console-live i { width: 4px; height: 4px; border-radius: 50%; background: #30d158; box-shadow: 0 0 5px rgba(48, 209, 88, 0.8); }
 
-.settings-console-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
-.settings-console-tab { justify-content: center; gap: 4px; min-width: 0; padding: 3px 5px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; background: rgba(255, 255, 255, 0.035); color: rgba(235, 235, 245, 0.45); cursor: pointer; font: inherit; font-size: 7px; font-weight: 650; transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease; }
+.settings-console-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; }
+.settings-console-tab { justify-content: center; gap: 3px; min-width: 0; padding: 3px 4px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 6px; background: rgba(255, 255, 255, 0.035); color: rgba(235, 235, 245, 0.45); cursor: pointer; font: inherit; font-size: 7px; font-weight: 650; transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease; }
 .settings-console-tab:hover { border-color: rgba(255, 255, 255, 0.25); color: rgba(255, 255, 255, 0.85); }
 .settings-console-tab--active { border-color: rgba(48, 209, 88, 0.5); background: rgba(48, 209, 88, 0.12); color: #30d158; }
 
@@ -1289,6 +1289,8 @@
 .settings-console-stage-icon { display: grid; width: 30px; height: 30px; flex: 0 0 30px; place-items: center; border-radius: 8px; color: #30d158; background: rgba(48, 209, 88, 0.12); }
 .settings-console-stage-icon--appearance { color: #ff9f0a; background: rgba(255, 159, 10, 0.12); }
 .settings-console-stage-icon--peek { color: #0a84ff; background: rgba(10, 132, 255, 0.12); }
+.settings-console-stage-icon--startup { color: #30d158; background: rgba(48, 209, 88, 0.12); padding: 3px; }
+.settings-console-stage-logo { width: 22px; height: 22px; object-fit: contain; filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.45)); border-radius: 5px; }
 .settings-console-detail { justify-content: space-between; min-width: 0; flex: 1; }
 .settings-console-detail--wide { align-items: flex-start; flex-direction: column; gap: 5px; }
 .settings-console-detail > div:first-child { display: flex; min-width: 0; flex-direction: column; gap: 2px; }

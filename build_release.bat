@@ -1,6 +1,6 @@
 @echo off
 echo ===================================================
-echo   Building Notch Production Release (v0.1.0)
+echo   Building Notch Production Release (v0.2.0)
 echo ===================================================
 
 call "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" 2>nul
@@ -26,8 +26,8 @@ if not exist "release" mkdir release
 
 if exist "src-tauri\target\release\notch.exe" (
     copy /Y "src-tauri\target\release\notch.exe" "release\notch.exe"
-    copy /Y "src-tauri\target\release\notch.exe" "release\Notch-v0.1.0.exe"
-    echo Success: Copied notch.exe and Notch-v0.1.0.exe to release\
+    copy /Y "src-tauri\target\release\notch.exe" "release\Notch-v0.2.0.exe"
+    echo Success: Copied notch.exe and Notch-v0.2.0.exe to release\
 )
 
 if exist "src-tauri\target\release\bundle\nsis\*.exe" (

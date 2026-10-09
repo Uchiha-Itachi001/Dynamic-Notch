@@ -41,6 +41,8 @@ pub fn run() {
             commands::metrics::get_system_metrics,
             commands::bluetooth::get_bluetooth_devices,
             commands::system::set_microphone_muted,
+            commands::system::get_auto_start_status,
+            commands::system::set_auto_start,
             commands::window::set_notch_expanded,
             commands::window::set_notch_peek,
             commands::window::launch_app,
