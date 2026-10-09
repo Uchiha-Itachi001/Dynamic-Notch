@@ -244,13 +244,13 @@
     from 0deg,
     transparent 0deg,
     transparent 285deg,
-    rgba(56, 189, 248, 0.02) 295deg,
-    rgba(56, 189, 248, 0.15) 315deg,
-    rgba(56, 189, 248, 0.45) 335deg,
-    var(--wave-color, #38bdf8) 355deg,
+    color-mix(in srgb, var(--wave-color, #22c55e) 5%, transparent) 295deg,
+    color-mix(in srgb, var(--wave-color, #22c55e) 25%, transparent) 315deg,
+    color-mix(in srgb, var(--wave-color, #22c55e) 65%, transparent) 335deg,
+    var(--wave-color, #22c55e) 355deg,
     transparent 360deg
   );
-  filter: drop-shadow(0 0 5px var(--wave-color, rgba(56, 189, 248, 0.8)));
+  filter: drop-shadow(0 0 5px var(--wave-color, rgba(34, 197, 94, 0.8)));
   animation: notchCometLeftLinear 2.6s linear infinite;
 }
 
@@ -264,14 +264,14 @@
   background: conic-gradient(
     from 0deg,
     transparent 0deg,
-    var(--wave-color, #38bdf8) 5deg,
-    rgba(56, 189, 248, 0.45) 25deg,
-    rgba(56, 189, 248, 0.15) 45deg,
-    rgba(56, 189, 248, 0.02) 65deg,
+    var(--wave-color, #22c55e) 5deg,
+    color-mix(in srgb, var(--wave-color, #22c55e) 65%, transparent) 25deg,
+    color-mix(in srgb, var(--wave-color, #22c55e) 25%, transparent) 45deg,
+    color-mix(in srgb, var(--wave-color, #22c55e) 5%, transparent) 65deg,
     transparent 75deg,
     transparent 360deg
   );
-  filter: drop-shadow(0 0 5px var(--wave-color, rgba(56, 189, 248, 0.8)));
+  filter: drop-shadow(0 0 5px var(--wave-color, rgba(34, 197, 94, 0.8)));
   animation: notchCometRightLinear 2.6s linear infinite;
 }
 
@@ -506,6 +506,8 @@
 .notch-activity-left {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
+  min-width: 20px;
   flex-shrink: 0;
 }
 
@@ -539,14 +541,16 @@
 .notch-activity-middle {
   position: relative;
   display: grid;
+  place-items: center;
   align-items: center;
   justify-content: center;
+  text-align: center;
   flex: 1;
   min-width: 0;
   height: 100%;
   overflow: hidden;
   white-space: nowrap;
-  padding: 0 2px;
+  padding: 0 4px;
 }
 
 .notch-swap-layer {
@@ -555,6 +559,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  text-align: center;
   width: 100%;
   height: 100%;
   min-width: 0;
@@ -592,19 +597,22 @@
   display: block;
   min-width: 0;
   width: 100%;
+  text-align: center;
+  margin: 0 auto;
   font-size: 10.5px;
   font-weight: 600;
   color: #ffffff;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 90px;
   letter-spacing: 0.15px;
 }
 
 .notch-activity-right {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  min-width: 20px;
   flex-shrink: 0;
 }
 
@@ -653,6 +661,7 @@
   line-height: 1;
   white-space: nowrap;
   text-overflow: ellipsis;
+  text-align: center;
 }
 
 /* Left Section when Bluetooth is active on main */
@@ -686,6 +695,7 @@
   text-overflow: ellipsis;
   max-width: 78px;
   flex: 1;
+  text-align: center;
 }
 
 
@@ -852,12 +862,20 @@
 @keyframes notchCardContentFadeIn {
   0% {
     opacity: 0;
-    transform: translateY(-8px) scale(0.96);
+    transform: translateY(-4px) scale(0.96);
+  }
+  30% {
+    opacity: 0;
   }
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+
+.notch-btn-icon--dashboard:hover {
+  color: #38bdf8 !important;
+  transform: scale(1.08) !important;
 }
 
 /* Row 1: Top Row (Album Art, Meta Text, Top-Right Waveform) */
@@ -1140,15 +1158,16 @@
 
 @keyframes notch-activate-bounce {
   0% {
-    transform: scaleX(0.72) scaleY(0.7);
-    opacity: 0.4;
+    transform: scaleX(0.85) scaleY(0.85);
+    opacity: 1;
   }
   60% {
-    transform: scaleX(1.05) scaleY(1.08);
+    transform: scaleX(1.035) scaleY(1.06);
     opacity: 1;
   }
   82% {
-    transform: scaleX(0.98) scaleY(0.97);
+    transform: scaleX(0.985) scaleY(0.985);
+    opacity: 1;
   }
   100% {
     transform: scaleX(1) scaleY(1);
@@ -1158,15 +1177,16 @@
 
 @keyframes notch-card-expand {
   0% {
-    transform: scaleX(0.72) scaleY(0.48);
-    opacity: 0.25;
+    transform: scaleX(0.48) scaleY(0.20);
+    opacity: 1;
   }
   60% {
-    transform: scaleX(1.04) scaleY(1.07);
+    transform: scaleX(1.035) scaleY(1.055);
     opacity: 1;
   }
   82% {
-    transform: scaleX(0.985) scaleY(0.98);
+    transform: scaleX(0.985) scaleY(0.985);
+    opacity: 1;
   }
   100% {
     transform: scaleX(1) scaleY(1);
@@ -3980,9 +4000,8 @@
   flex-shrink: 0;
 }
 
-/* ─── OSD: Status pill (DND / Camera / Mic) ──────────────────── */
+/* ─── OSD: Status pill (DND / Mic) ──────────────────── */
 .dynamic-notch--dnd,
-.dynamic-notch--camera,
 .dynamic-notch--mic {
   width: 220px !important;
   height: 38px !important;
@@ -4011,11 +4030,6 @@
 .osd-status-icon--dnd {
   background: rgba(99, 102, 241, 0.22);
   color: #818cf8;
-}
-
-.osd-status-icon--camera {
-  background: rgba(34, 197, 94, 0.18);
-  color: #4ade80;
 }
 
 .osd-status-icon--mic {

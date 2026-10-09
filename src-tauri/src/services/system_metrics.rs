@@ -69,7 +69,7 @@ fn format_speed(bytes_per_sec: u64) -> String {
 fn has_internet_connection() -> bool {
     let now = Instant::now();
     if let Ok(state) = CONNECTIVITY_STATE.lock() {
-        if state.checked_at.is_some_and(|checked_at| now.duration_since(checked_at).as_secs() < 3) {
+        if state.checked_at.is_some_and(|checked_at| now.duration_since(checked_at).as_secs() < 10) {
             return state.reachable;
         }
     }
@@ -78,7 +78,7 @@ fn has_internet_connection() -> bool {
         address
             .parse::<SocketAddr>()
             .ok()
-            .and_then(|target| TcpStream::connect_timeout(&target, Duration::from_millis(1500)).ok())
+            .and_then(|target| TcpStream::connect_timeout(&target, Duration::from_millis(600)).ok())
             .is_some()
     });
 
@@ -135,7 +135,7 @@ fn get_network_speeds() -> (u64, u64, String, String, String) {
         }
     }
 
-    let net_type = if has_internet_connection() {
+    let net_type = if (has_wifi_up || has_ethernet_up) && has_internet_connection() {
         if let Some(t) = best_if_type {
             t
         } else if has_wifi_up {

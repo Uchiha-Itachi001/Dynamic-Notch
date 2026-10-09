@@ -32,7 +32,7 @@ export const useBluetooth = () => {
     };
 
     fetchBluetooth();
-    const interval = setInterval(fetchBluetooth, 5000);
+    const interval = setInterval(fetchBluetooth, 8000);
     return () => {
       isMounted = false;
       clearInterval(interval);

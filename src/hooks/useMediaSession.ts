@@ -146,7 +146,7 @@ async function startPolling() {
   fetchAndUpdate();
 
   if (pollTimer === null) {
-    pollTimer = window.setInterval(fetchAndUpdate, 2500);
+    pollTimer = window.setInterval(fetchAndUpdate, 6000);
   }
 }
 

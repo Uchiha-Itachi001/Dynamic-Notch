@@ -222,12 +222,6 @@ export const tauriBridge = {
     });
   },
 
-  onCameraStatusChanged: (callback: (payload: { active: boolean }) => void): Promise<UnlistenFn> => {
-    return listen<{ active: boolean }>("camera-status-changed", (event) => {
-      callback(event.payload);
-    });
-  },
-
   onDownloadUpdated: (callback: (payload: DownloadActivity) => void): Promise<UnlistenFn> => {
     return listen<DownloadActivity>("download-updated", (event) => {
       callback(event.payload);

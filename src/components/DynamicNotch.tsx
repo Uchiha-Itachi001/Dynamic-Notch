@@ -13,8 +13,8 @@ import { SettingsPanel } from "./SettingsPanel";
 
 /* ─── Priority ordering for OSD states ──────────────────────────────────────
    Higher priority states take over the notch, lower ones queue/dismiss.
-   call_incoming > recording > camera > mic_muted > timer > download >
-   notification > volume > brightness > dnd > airplane > (media/settings)
+   call_incoming > recording > mic_muted > timer > download >
+   notification > volume > brightness > dnd > (media/settings)
    ────────────────────────────────────────────────────────────────────────── */
 
 export const DynamicNotch: React.FC = () => {
@@ -55,7 +55,6 @@ export const DynamicNotch: React.FC = () => {
     osd,
     showVolume,
     setMicMuted,
-    setCameraInUse,
     dismissCall,
     pauseResumeTimer,
     cancelTimer,
@@ -68,7 +67,6 @@ export const DynamicNotch: React.FC = () => {
   useSystemEvents({
     showVolume,
     setMicMuted,
-    setCameraInUse,
     showDownload,
     dismissDownload,
   });
@@ -136,11 +134,8 @@ export const DynamicNotch: React.FC = () => {
   }, [isShiftPeek]);
 
   useEffect(() => {
-    if (expandedType !== null) tauriBridge.setNotchExpanded(true);
+    tauriBridge.setNotchExpanded(expandedType !== null);
   }, [expandedType]);
-
-
-
 
   const hasMediaSession = hasLiveMedia;
   const isMultiActivity = hasMediaSession && isBtConnected && activeBtDevice !== null;
@@ -192,14 +187,14 @@ export const DynamicNotch: React.FC = () => {
     setSplitViewMode((prev) => (prev === "media_main" ? "bt_main" : "media_main"));
   };
 
-  const handleCollapse = (e?: React.MouseEvent) => {
+  const handleCollapse = (e?: React.MouseEvent | React.PointerEvent) => {
     if (e) e.stopPropagation();
     if (collapseTimeoutRef.current) { window.clearTimeout(collapseTimeoutRef.current); collapseTimeoutRef.current = null; }
     if (hoverTimeoutRef.current) { window.clearTimeout(hoverTimeoutRef.current); hoverTimeoutRef.current = null; }
     setIsHoverExpanded(false);
     setExpandedType(null);
     setHoveredMetric(null);
-    setTimeout(() => tauriBridge.setNotchExpanded(false), 280);
+    tauriBridge.setNotchExpanded(false);
   };
 
   const handleMouseEnter = () => {
@@ -507,7 +502,7 @@ export const DynamicNotch: React.FC = () => {
   const rUp = 13, cUp = 2 * Math.PI * rUp, upOffset = cUp - (ulPct / 100) * cUp;
 
   // ── Determine which "OSD card" to show ────────────────────────────────────
-  // Priority: call > recording > camera > mic > timer > download > notification > brightness > dnd
+  // Priority: call > recording > mic > timer > download > notification > brightness > dnd
   const activeOSD = osd.type;
 
   // Whether we should show an OSD card overtaking the main notch
@@ -525,8 +520,8 @@ export const DynamicNotch: React.FC = () => {
   return (
     <>
       {/* Backdrop */}
-      {(expandedType !== null) && (
-        <div className="island-backdrop" onClick={() => handleCollapse()} />
+      {expandedType !== null && (
+        <div className="island-backdrop" onPointerDown={handleCollapse} />
       )}
 
       <div
@@ -631,11 +626,13 @@ export const DynamicNotch: React.FC = () => {
                     <path d="M2 5.5a1.2 1.2 0 0 1 1.85-.98L10.7 9.7a1.2 1.2 0 0 1 0 1.96l-6.85 5.18A1.2 1.2 0 0 1 2 15.86V5.5zm11 0a1.2 1.2 0 0 1 1.85-.98L21.7 9.7a1.2 1.2 0 0 1 0 1.96l-6.85 5.18A1.2 1.2 0 0 1 13 15.86V5.5z" />
                   </svg>
                 </button>
-                <button className="notch-btn-icon" onClick={(e) => { e.stopPropagation(); setExpandedType("settings"); }} title="System Stats">
-                  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="3" />
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                  </svg>
+                <button
+                  className="notch-btn-icon notch-btn-icon--dashboard"
+                  onClick={(e) => { e.stopPropagation(); setExpandedType("settings"); }}
+                  title="Dashboard"
+                  aria-label="Dashboard"
+                >
+                  <LayoutDashboard size={18} strokeWidth={2.2} />
                 </button>
               </div>
             </div>
@@ -694,7 +691,7 @@ export const DynamicNotch: React.FC = () => {
           return (
             <div key="expanded-settings" className="dynamic-notch dynamic-notch--ios-active"
               onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}
-              style={{ ["--wave-color" as any]: "#ff453a", ["--wave-glow" as any]: "rgba(255, 69, 58, 0.35)" }}>
+              style={{ ["--wave-color" as any]: "#22c55e", ["--wave-glow" as any]: "rgba(34, 197, 94, 0.45)" }}>
               <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
               {renderLightBorder()}{renderNotchBgCover(false)}
               <div className="notch-expanded-settings-card" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
@@ -1081,7 +1078,7 @@ export const DynamicNotch: React.FC = () => {
           <div className="notch-split-container">
             <div className="dynamic-notch notch-split-main notch-split-main--default"
               onClick={handleExpandSettings}
-              style={{ ["--wave-color" as any]: "#38bdf8", ["--wave-glow" as any]: "rgba(56,189,248,0.45)", cursor: "pointer" }}>
+              style={{ ["--wave-color" as any]: "#22c55e", ["--wave-glow" as any]: "rgba(34,197,94,0.45)", cursor: "pointer" }}>
               <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
               {renderLightBorder()}{renderNotchBgCover(false)}
               <div className="notch-compact-layout" style={{ gap: "8px", padding: "0 4px", width: "100%" }}>
@@ -1172,7 +1169,7 @@ export const DynamicNotch: React.FC = () => {
         {showIdleCompact && (
           <div key="compact-idle" className={`dynamic-notch dynamic-notch--compact ${volumeFeedbackVisible ? "dynamic-notch--volume-feedback" : ""}`}
             onClick={handleExpandSettings}
-            style={{ ["--wave-color" as any]: "#38bdf8", ["--wave-glow" as any]: "rgba(56,189,248,0.45)", cursor: "pointer" }}>
+            style={{ ["--wave-color" as any]: "#22c55e", ["--wave-glow" as any]: "rgba(34,197,94,0.45)", cursor: "pointer" }}>
             <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
             {renderLightBorder()}{renderNotchBgCover(false)}
             <div className="notch-compact-layout">

@@ -45,12 +45,12 @@ fn get_storage() -> &'static Arc<Mutex<Vec<BluetoothDevice>>> {
                 }
 
                 // Adaptive Sleep:
-                // - Active Bluetooth device connected: 8s interval (live battery tracking)
-                // - No Bluetooth devices: 16s interval (conserves process spawns & battery)
+                // - Active Bluetooth device connected: 14s interval (live battery tracking)
+                // - No Bluetooth devices: 28s interval (conserves process spawns & battery)
                 if has_connected_device {
-                    thread::sleep(Duration::from_secs(8));
+                    thread::sleep(Duration::from_secs(14));
                 } else {
-                    thread::sleep(Duration::from_secs(16));
+                    thread::sleep(Duration::from_secs(28));
                 }
             }
         });

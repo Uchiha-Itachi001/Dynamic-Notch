@@ -1027,13 +1027,15 @@ pub fn volume_mute() {
 }
 
 pub fn seek_media(position_sec: u64) {
+    // Security/Safety: Clamp to 24h ceiling to prevent integer overflow when computing ticks
+    let safe_pos = position_sec.min(86400);
     if let Ok(mut guard) = MEDIA_CACHE.lock() {
         guard.last_fetch = None;
         if let Some(ref mut session) = guard.cached_session {
-            session.current_sec = position_sec;
-            session.position_ms = Some(position_sec * 1000);
+            session.current_sec = safe_pos;
+            session.position_ms = Some(safe_pos.saturating_mul(1000));
         }
-        let ticks = (position_sec as i64) * 10_000_000;
+        let ticks = (safe_pos as i64).saturating_mul(10_000_000);
         let mut sought = false;
         if let Some(ref session) = guard.active_session {
             if session.TryChangePlaybackPositionAsync(ticks).is_ok() {

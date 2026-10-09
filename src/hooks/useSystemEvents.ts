@@ -4,7 +4,6 @@ import { DownloadActivity, tauriBridge } from "../services/tauriBridge";
 interface SystemEventActions {
   showVolume: (pct: number) => void;
   setMicMuted: (muted: boolean) => void;
-  setCameraInUse: (active: boolean) => void;
   showDownload: (data: {
     filename: string;
     downloadedBytes: number;
@@ -16,11 +15,10 @@ interface SystemEventActions {
 }
 
 /** Bridges Windows events into the island. Native payloads are the source of
- * truth: the UI never invents a camera, download, or radio state. */
+ * truth: the UI never invents a download or radio state. */
 export function useSystemEvents({
   showVolume,
   setMicMuted,
-  setCameraInUse,
   showDownload,
   dismissDownload,
 }: SystemEventActions) {
@@ -32,7 +30,6 @@ export function useSystemEvents({
 
     add(tauriBridge.onVolumeChanged(({ volume_pct }) => showVolume(volume_pct)));
     add(tauriBridge.onMicStatusChanged(({ muted }) => setMicMuted(muted)));
-    add(tauriBridge.onCameraStatusChanged(({ active }) => setCameraInUse(active)));
     add(tauriBridge.onDownloadUpdated((download: DownloadActivity) => {
       if (!download.active) {
         dismissDownload();
@@ -48,5 +45,5 @@ export function useSystemEvents({
     }));
 
     return () => unlisteners.forEach((unlisten) => unlisten());
-  }, [dismissDownload, setCameraInUse, setMicMuted, showDownload, showVolume]);
+  }, [dismissDownload, setMicMuted, showDownload, showVolume]);
 }

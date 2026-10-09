@@ -38,11 +38,14 @@ fn create_startup_shortcut(exe_path: &std::path::Path) {
             let _ = std::fs::create_dir_all(parent);
         }
         let work_dir = exe_path.parent().unwrap_or(exe_path);
+        let shortcut_clean = shortcut_path.display().to_string().replace('\'', "''");
+        let exe_clean = exe_path.display().to_string().replace('\'', "''");
+        let work_dir_clean = work_dir.display().to_string().replace('\'', "''");
         let script = format!(
             "$ws = New-Object -ComObject WScript.Shell; $s = $ws.CreateShortcut('{}'); $s.TargetPath = '{}'; $s.WorkingDirectory = '{}'; $s.Description = 'Notch Dynamic Island'; $s.Save()",
-            shortcut_path.display(),
-            exe_path.display(),
-            work_dir.display(),
+            shortcut_clean,
+            exe_clean,
+            work_dir_clean,
         );
 
         use std::os::windows::process::CommandExt;

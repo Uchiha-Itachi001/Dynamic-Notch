@@ -6,7 +6,6 @@ export type OSDType =
   | "dnd"
   | "recording"
   | "mic_muted"
-  | "camera"
   | "call_incoming"
   | "timer"
   | "download"
@@ -48,7 +47,6 @@ export interface OSDState {
   isRecording: boolean;
   recordingSec: number;
   isMicMuted: boolean;
-  isCameraInUse: boolean;
   call: CallData | null;
   timer: TimerData | null;
   download: DownloadData | null;
@@ -67,7 +65,6 @@ export function useOSDEvents() {
     isRecording: false,
     recordingSec: 0,
     isMicMuted: false,
-    isCameraInUse: false,
     call: null,
     timer: null,
     download: null,
@@ -141,15 +138,6 @@ export function useOSDEvents() {
     }));
     if (muted && announce) scheduleAutoDismiss();
   }, [scheduleAutoDismiss]);
-
-  const setCameraInUse = useCallback((active: boolean) => {
-    if (active) {
-      cancelAutoDismiss();
-      setOSD((prev) => ({ ...prev, type: "camera", isCameraInUse: true }));
-    } else {
-      setOSD((prev) => ({ ...prev, isCameraInUse: false, type: prev.type === "camera" ? null : prev.type }));
-    }
-  }, [cancelAutoDismiss]);
 
   const showIncomingCall = useCallback((caller: CallData) => {
     cancelAutoDismiss();
@@ -260,7 +248,6 @@ export function useOSDEvents() {
     stopRecording,
     toggleMicMute,
     setMicMuted,
-    setCameraInUse,
     showIncomingCall,
     dismissCall,
     startTimer,

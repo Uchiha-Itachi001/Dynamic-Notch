@@ -59,12 +59,11 @@ export const NotchOsd: React.FC<NotchOsdProps> = ({
   }
 
   const status = {
-    camera: { className: "dynamic-notch--camera", iconClass: "osd-status-icon--camera", label: "Camera", sub: "In Use", subClass: "osd-status-sub--green", icon: <><path d="M23 7l-7 5 7 5V7z" /><rect x="1" y="5" width="15" height="14" rx="2" ry="2" /></> },
     mic_muted: { className: "dynamic-notch--mic", iconClass: "osd-status-icon--mic", label: "Microphone", sub: "Muted", subClass: "osd-status-sub--red", icon: <><line x1="1" y1="1" x2="23" y2="23" /><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6" /><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23" /><line x1="12" y1="19" x2="12" y2="23" /><line x1="8" y1="23" x2="16" y2="23" /></> },
     dnd: { className: "dynamic-notch--dnd", iconClass: "osd-status-icon--dnd", label: "Do Not Disturb", sub: osd.dndEnabled ? "On" : "Off", subClass: osd.dndEnabled ? "osd-status-sub--blue" : "osd-status-sub--dim", icon: <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z" /> },
   } as const;
 
-  if (osd.type === "camera" || osd.type === "mic_muted" || osd.type === "dnd") {
+  if (osd.type === "mic_muted" || osd.type === "dnd") {
     const item = status[osd.type];
     return shell(item.className, (
       <div className="osd-status-layout">

@@ -8,11 +8,6 @@ use std::time::{Duration, Instant, SystemTime};
 use tauri::{AppHandle, Emitter};
 
 #[derive(Clone, serde::Serialize)]
-struct CameraStatusPayload {
-    active: bool,
-}
-
-#[derive(Clone, serde::Serialize)]
 struct DownloadPayload {
     active: bool,
     filename: String,
@@ -28,41 +23,6 @@ struct DownloadSample {
     filename: String,
     size: u64,
     modified: SystemTime,
-}
-
-const CREATE_NO_WINDOW: u32 = 0x08000000;
-
-fn camera_is_active() -> Option<bool> {
-    use std::os::windows::process::CommandExt;
-    use std::process::Command;
-
-    // CapabilityAccessManager powers the Windows privacy indicator. An access
-    // session is live when its last start time has no later stop time.
-    const SCRIPT: &str = r#"
-$root = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam'
-$active = $false
-if (Test-Path -LiteralPath $root) {
-  Get-ChildItem -LiteralPath $root -Recurse -ErrorAction SilentlyContinue | ForEach-Object {
-    $p = Get-ItemProperty -LiteralPath $_.PSPath -ErrorAction SilentlyContinue
-    $start = [int64]($p.LastUsedTimeStart)
-    $stop = [int64]($p.LastUsedTimeStop)
-    if ($start -gt 0 -and $start -gt $stop) { $script:active = $true }
-  }
-}
-if ($active) { '1' } else { '0' }
-"#;
-
-    let output = Command::new("powershell")
-        .args(["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", SCRIPT])
-        .creation_flags(CREATE_NO_WINDOW)
-        .output()
-        .ok()?;
-
-    match String::from_utf8_lossy(&output.stdout).trim() {
-        "1" => Some(true),
-        "0" => Some(false),
-        _ => None,
-    }
 }
 
 fn downloads_dir() -> Option<PathBuf> {
@@ -111,23 +71,11 @@ fn newest_partial_download() -> Option<DownloadSample> {
 
 pub fn start(app: AppHandle) {
     std::thread::spawn(move || {
-        let mut camera_state: Option<bool> = None;
-        let mut last_camera_check = Instant::now() - Duration::from_secs(10);
         let mut prior_sizes: HashMap<PathBuf, (u64, Instant)> = HashMap::new();
         let mut last_download_path: Option<PathBuf> = None;
 
         loop {
             let now = Instant::now();
-
-            if now.duration_since(last_camera_check) >= Duration::from_secs(2) {
-                last_camera_check = now;
-                if let Some(active) = camera_is_active() {
-                    if camera_state != Some(active) {
-                        camera_state = Some(active);
-                        let _ = app.emit("camera-status-changed", CameraStatusPayload { active });
-                    }
-                }
-            }
 
             if let Some(sample) = newest_partial_download() {
                 let (previous_size, previous_at) = prior_sizes
@@ -159,7 +107,7 @@ pub fn start(app: AppHandle) {
                 });
             }
 
-            std::thread::sleep(Duration::from_millis(900));
+            std::thread::sleep(Duration::from_millis(600));
         }
     });
 }
