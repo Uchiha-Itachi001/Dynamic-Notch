@@ -873,6 +873,140 @@
   }
 }
 
+/* ─── Apple Dynamic Island Spring Bounce Animation for Inner Elements ─── */
+@keyframes notch-element-spring {
+  0% {
+    opacity: 0;
+    transform: scale(0.82) translateY(6px);
+  }
+  58% {
+    opacity: 1;
+    transform: scale(1.045) translateY(-1.5px);
+  }
+  80% {
+    transform: scale(0.985) translateY(0.5px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Staggered spring bounce on active expanded media card elements */
+.dynamic-notch--expanded .notch-card-media-left .notch-card-art,
+.dynamic-notch--ios-active .notch-card-media-left .notch-card-art {
+  animation: notch-element-spring 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) 0.03s both;
+}
+
+.dynamic-notch--expanded .notch-card-text,
+.dynamic-notch--ios-active .notch-card-text {
+  animation: notch-element-spring 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) 0.06s both;
+}
+
+.dynamic-notch--expanded .notch-card-top-right,
+.dynamic-notch--ios-active .notch-card-top-right {
+  animation: notch-element-spring 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both;
+}
+
+.dynamic-notch--expanded .notch-card-scrubber-row,
+.dynamic-notch--ios-active .notch-card-scrubber-row {
+  animation: notch-element-spring 0.46s cubic-bezier(0.34, 1.56, 0.64, 1) 0.10s both;
+}
+
+.dynamic-notch--expanded .notch-card-controls-row,
+.dynamic-notch--ios-active .notch-card-controls-row {
+  animation: notch-element-spring 0.48s cubic-bezier(0.34, 1.56, 0.64, 1) 0.13s both;
+}
+
+.dynamic-notch--expanded .notch-card-controls-row .notch-btn-icon,
+.dynamic-notch--ios-active .notch-card-controls-row .notch-btn-icon {
+  animation: notch-element-spring 0.46s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
+}
+
+/* Staggered spring bounce on active dashboard elements */
+.notch-expanded-settings-card .apple-full-header {
+  animation: notch-element-spring 0.40s cubic-bezier(0.34, 1.56, 0.64, 1) 0.02s both;
+}
+
+.notch-expanded-settings-card .apple-rings-large-wrap {
+  animation: notch-element-spring 0.46s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both;
+}
+
+.notch-expanded-settings-card .apple-telemetry-cards .apple-tel-card:nth-child(1) {
+  animation: notch-element-spring 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both;
+}
+
+.notch-expanded-settings-card .apple-telemetry-cards .apple-tel-card:nth-child(2) {
+  animation: notch-element-spring 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) 0.12s both;
+}
+
+.notch-expanded-settings-card .apple-telemetry-cards .apple-tel-card:nth-child(3) {
+  animation: notch-element-spring 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) 0.10s both;
+}
+
+.notch-expanded-settings-card .apple-telemetry-cards .apple-tel-card:nth-child(4) {
+  animation: notch-element-spring 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) 0.14s both;
+}
+
+/* Staggered spring bounce on active compact notch elements */
+.dynamic-notch--activity .notch-activity-left,
+.dynamic-notch--active .notch-activity-left {
+  animation: notch-element-spring 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.dynamic-notch--activity .notch-activity-middle,
+.dynamic-notch--active .notch-activity-middle {
+  animation: notch-element-spring 0.40s cubic-bezier(0.34, 1.56, 0.64, 1) 0.03s both;
+}
+
+.dynamic-notch--activity .notch-activity-right,
+.dynamic-notch--active .notch-activity-right {
+  animation: notch-element-spring 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 0.06s both;
+}
+
+/* Staggered spring bounce on active split notch */
+.notch-split-main--media .notch-album-thumb,
+.notch-split-main--bluetooth .notch-split-bt-icon {
+  animation: notch-element-spring 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.notch-split-main--media .notch-split-media-name,
+.notch-split-main--bluetooth .notch-split-bt-name {
+  animation: notch-element-spring 0.40s cubic-bezier(0.34, 1.56, 0.64, 1) 0.03s both;
+}
+
+.notch-split-main--media .notch-equalizer-wave,
+.notch-split-main--bluetooth .notch-mini-battery-ring {
+  animation: notch-element-spring 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 0.06s both;
+}
+
+/* Staggered spring bounce on app settings card */
+.app-settings-card .apple-full-header {
+  animation: notch-element-spring 0.40s cubic-bezier(0.34, 1.56, 0.64, 1) 0.02s both;
+}
+
+.app-settings-card .settings-console {
+  animation: notch-element-spring 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) 0.06s both;
+}
+
+/* Staggered spring bounce on calendar panel */
+.calendar-panel {
+  animation: notch-element-spring 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 0.04s both;
+}
+
+/* Staggered spring bounce on active bluetooth card elements */
+.dynamic-notch--bluetooth-expanded .notch-bt-badge {
+  animation: notch-element-spring 0.40s cubic-bezier(0.34, 1.56, 0.64, 1) 0.03s both;
+}
+
+.dynamic-notch--bluetooth-expanded .notch-bt-info {
+  animation: notch-element-spring 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) 0.06s both;
+}
+
+.dynamic-notch--bluetooth-expanded .notch-bt-battery-ring-container {
+  animation: notch-element-spring 0.46s cubic-bezier(0.34, 1.56, 0.64, 1) 0.08s both;
+}
+
 .notch-btn-icon--dashboard:hover {
   color: #38bdf8 !important;
   transform: scale(1.08) !important;
@@ -2203,60 +2337,36 @@
 }
 
 .apple-tel-card:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.11);
 }
 
 .apple-tel-card--active-cpu {
-  background: rgba(255, 69, 58, 0.12) !important;
-  border-color: rgba(255, 69, 58, 0.5) !important;
-  box-shadow: 0 0 10px rgba(255, 69, 58, 0.25);
+  background: rgba(255, 69, 58, 0.08) !important;
+  border-color: rgba(255, 69, 58, 0.35) !important;
+  box-shadow: 0 0 10px rgba(255, 69, 58, 0.16);
   transform: translateY(-1px);
 }
 
 .apple-tel-card--active-ram {
-  background: rgba(191, 90, 242, 0.12) !important;
-  border-color: rgba(191, 90, 242, 0.5) !important;
-  box-shadow: 0 0 10px rgba(191, 90, 242, 0.25);
+  background: rgba(191, 90, 242, 0.08) !important;
+  border-color: rgba(191, 90, 242, 0.35) !important;
+  box-shadow: 0 0 10px rgba(191, 90, 242, 0.16);
   transform: translateY(-1px);
 }
 
 .apple-tel-card--active-down {
-  background: rgba(48, 209, 88, 0.12) !important;
-  border-color: rgba(48, 209, 88, 0.5) !important;
-  box-shadow: 0 0 10px rgba(48, 209, 88, 0.25);
+  background: rgba(48, 209, 88, 0.08) !important;
+  border-color: rgba(48, 209, 88, 0.35) !important;
+  box-shadow: 0 0 10px rgba(48, 209, 88, 0.16);
   transform: translateY(-1px);
 }
 
 .apple-tel-card--active-up {
-  background: rgba(56, 189, 248, 0.12) !important;
-  border-color: rgba(56, 189, 248, 0.5) !important;
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+  background: rgba(56, 189, 248, 0.08) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.16);
   transform: translateY(-1px);
-}
-
-.apple-tel-card--active-down,
-.apple-tel-card--active-up,
-.apple-tel-card:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.24);
-}
-
-.apple-full-body:has(.apple-full-status--center .apple-net-icon:hover) .apple-tel-card:nth-child(3),
-.apple-full-body:has(.apple-full-status--center .apple-net-icon:hover) .apple-tel-card:nth-child(4) {
-  transform: translateY(-1px);
-}
-
-.apple-full-body:has(.apple-full-status--center .apple-net-icon:hover) .apple-tel-card:nth-child(3) {
-  background: rgba(48, 209, 88, 0.14);
-  border-color: rgba(48, 209, 88, 0.42);
-  box-shadow: 0 0 10px rgba(48, 209, 88, 0.2);
-}
-
-.apple-full-body:has(.apple-full-status--center .apple-net-icon:hover) .apple-tel-card:nth-child(4) {
-  background: rgba(56, 189, 248, 0.14);
-  border-color: rgba(56, 189, 248, 0.42);
-  box-shadow: 0 0 10px rgba(56, 189, 248, 0.2);
 }
 
 .apple-tel-card-header {

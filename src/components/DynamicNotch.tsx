@@ -191,28 +191,39 @@ export const DynamicNotch: React.FC = () => {
     if (e) e.stopPropagation();
     if (collapseTimeoutRef.current) { window.clearTimeout(collapseTimeoutRef.current); collapseTimeoutRef.current = null; }
     if (hoverTimeoutRef.current) { window.clearTimeout(hoverTimeoutRef.current); hoverTimeoutRef.current = null; }
+    hoverTargetRef.current = null;
     setIsHoverExpanded(false);
     setExpandedType(null);
     setHoveredMetric(null);
     tauriBridge.setNotchExpanded(false);
   };
 
-  const handleMouseEnter = () => {
+  const hoverTargetRef = useRef<"media" | "settings" | "bluetooth" | null>(null);
+
+  const scheduleHoverExpand = (target?: "media" | "settings" | "bluetooth") => {
     setIsNotchHovered(true);
+    if (target) {
+      hoverTargetRef.current = target;
+    }
     if (collapseTimeoutRef.current) { window.clearTimeout(collapseTimeoutRef.current); collapseTimeoutRef.current = null; }
     if (expandOnHover && expandedType === null && osd.type === null) {
       if (hoverTimeoutRef.current) window.clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = window.setTimeout(() => {
         tauriBridge.setNotchExpanded(true);
-        if (hasMediaSession) setExpandedType("media");
-        else setExpandedType("settings");
+        const resolvedTarget = hoverTargetRef.current ?? (hasMediaSession ? "media" : "settings");
+        setExpandedType(resolvedTarget);
         setIsHoverExpanded(true);
       }, 70);
     }
   };
 
+  const handleMouseEnter = () => {
+    scheduleHoverExpand();
+  };
+
   const handleMouseLeave = () => {
     if (!isShiftDown) setIsNotchHovered(false);
+    hoverTargetRef.current = null;
     if (hoverTimeoutRef.current) { window.clearTimeout(hoverTimeoutRef.current); hoverTimeoutRef.current = null; }
     if (isHoverExpanded && expandedType !== null) {
       if (collapseTimeoutRef.current) window.clearTimeout(collapseTimeoutRef.current);
@@ -629,7 +640,6 @@ export const DynamicNotch: React.FC = () => {
                 <button
                   className="notch-btn-icon notch-btn-icon--dashboard"
                   onClick={(e) => { e.stopPropagation(); setExpandedType("settings"); }}
-                  title="Dashboard"
                   aria-label="Dashboard"
                 >
                   <LayoutDashboard size={18} strokeWidth={2.2} />
@@ -649,7 +659,7 @@ export const DynamicNotch: React.FC = () => {
                 <div className="apple-full-actions">
                     <div className="apple-header-nav">
                       {hasMediaSession && (
-                        <button type="button" className="apple-action-icon apple-action-icon--music" onClick={() => setExpandedType("media")} title={`Now Playing: ${activeTitle}`}>
+                        <button type="button" className="apple-action-icon apple-action-icon--music" onClick={() => setExpandedType("media")} aria-label={`Now Playing: ${activeTitle}`}>
                           <Music2 size={12} strokeWidth={2.2} />
                         </button>
                       )}
@@ -703,7 +713,7 @@ export const DynamicNotch: React.FC = () => {
                         type="button"
                         className="apple-action-icon apple-action-icon--music"
                         onClick={() => setExpandedType("media")}
-                        title={`Now Playing: ${activeTitle}`}
+                        aria-label={`Now Playing: ${activeTitle}`}
                       >
                         <Music2 size={12} strokeWidth={2.2} />
                       </button>
@@ -738,7 +748,7 @@ export const DynamicNotch: React.FC = () => {
                 <div className="apple-full-body">
                   <div className="apple-rings-large-wrap">
                     <div className={`apple-full-status apple-full-status--center apple-full-status--${isDisconnected ? "offline" : isEthernet ? "ethernet" : "wifi"}`}>
-                      <span className="apple-net-icon" data-tooltip={isDisconnected ? "No Internet" : isEthernet ? "Ethernet Connected" : "Wi-Fi Connected"} aria-label={isDisconnected ? "No Internet" : isEthernet ? "Ethernet Connected" : "Wi-Fi Connected"}>
+                      <span className="apple-net-icon" aria-label={isDisconnected ? "No Internet" : isEthernet ? "Ethernet Connected" : "Wi-Fi Connected"}>
                         {isDisconnected ? (
                           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" className="apple-wifi-offline-svg">
                             <line x1="2" y1="2" x2="22" y2="22" stroke="#ff453a" strokeWidth="2.4" />
@@ -801,9 +811,7 @@ export const DynamicNotch: React.FC = () => {
                               ? "drop-shadow(0 0 7px rgba(255,69,58,0.95))"
                               : "drop-shadow(0 0 4px rgba(255,69,58,0.6))",
                           }} />
-                        <circle cx="39" cy="39" r={rCpu} fill="none" stroke="transparent" strokeWidth="7" style={{ pointerEvents: "stroke" }}>
-                          <title>Processor: {cpuPct}% Active Load</title>
-                        </circle>
+                        <circle cx="39" cy="39" r={rCpu} fill="none" stroke="transparent" strokeWidth="7" style={{ pointerEvents: "stroke" }} />
                       </g>
 
                       {/* Ring 2: Memory (RAM) */}
@@ -827,9 +835,7 @@ export const DynamicNotch: React.FC = () => {
                               ? "drop-shadow(0 0 7px rgba(191,90,242,0.95))"
                               : "drop-shadow(0 0 4px rgba(191,90,242,0.6))",
                           }} />
-                        <circle cx="39" cy="39" r={rRam} fill="none" stroke="transparent" strokeWidth="7" style={{ pointerEvents: "stroke" }}>
-                          <title>Memory: {ramPct}% ({usedRamGb} GB)</title>
-                        </circle>
+                        <circle cx="39" cy="39" r={rRam} fill="none" stroke="transparent" strokeWidth="7" style={{ pointerEvents: "stroke" }} />
                       </g>
 
                       {/* Ring 3: Download */}
@@ -853,9 +859,7 @@ export const DynamicNotch: React.FC = () => {
                               ? "drop-shadow(0 0 7px rgba(48,209,88,0.95))"
                               : "drop-shadow(0 0 4px rgba(48,209,88,0.6))",
                           }} />
-                        <circle cx="39" cy="39" r={rDown} fill="none" stroke="transparent" strokeWidth="7" style={{ pointerEvents: "stroke" }}>
-                          <title>Download: ↓ {systemMetrics?.net_recv_formatted ?? "0 B/s"}</title>
-                        </circle>
+                        <circle cx="39" cy="39" r={rDown} fill="none" stroke="transparent" strokeWidth="7" style={{ pointerEvents: "stroke" }} />
                       </g>
 
                       {/* Ring 4: Upload */}
@@ -879,9 +883,7 @@ export const DynamicNotch: React.FC = () => {
                               ? "drop-shadow(0 0 7px rgba(56,189,248,0.95))"
                               : "drop-shadow(0 0 4px rgba(56,189,248,0.6))",
                           }} />
-                        <circle cx="39" cy="39" r={rUp} fill="none" stroke="transparent" strokeWidth="7" style={{ pointerEvents: "stroke" }}>
-                          <title>Upload: ↑ {systemMetrics?.net_sent_formatted ?? "0 B/s"}</title>
-                        </circle>
+                        <circle cx="39" cy="39" r={rUp} fill="none" stroke="transparent" strokeWidth="7" style={{ pointerEvents: "stroke" }} />
                       </g>
                     </svg>
                   </div>
@@ -946,7 +948,7 @@ export const DynamicNotch: React.FC = () => {
 
                 {false && (
                 <div className="apple-full-footer">
-                  <button type="button" className="apple-settings-link" onClick={() => tauriBridge.openWindowsSettings()} title="Windows Settings">
+                  <button type="button" className="apple-settings-link" onClick={() => tauriBridge.openWindowsSettings()} aria-label="Windows Settings">
                     <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="12" cy="12" r="3" />
                       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
@@ -1006,6 +1008,7 @@ export const DynamicNotch: React.FC = () => {
           <div className="notch-split-container">
             <div className={`dynamic-notch notch-split-main ${splitViewMode === "media_main" ? "notch-split-main--media" : "notch-split-main--bluetooth"}`}
               onClick={handleMainPillClick}
+              onMouseEnter={() => scheduleHoverExpand(splitViewMode === "media_main" ? "media" : "bluetooth")}
               style={{
                 ["--wave-color" as any]: splitViewMode === "media_main" ? trackTheme.waveColor : "#22c55e",
                 ["--wave-gradient" as any]: splitViewMode === "media_main" ? trackTheme.waveGradient : undefined,
@@ -1047,6 +1050,7 @@ export const DynamicNotch: React.FC = () => {
               )}
             </div>
             <div className="dynamic-notch notch-split-secondary" onClick={handleSecondaryPillClick}
+              onMouseEnter={() => scheduleHoverExpand(splitViewMode === "media_main" ? "bluetooth" : "media")}
               style={{
                 ["--wave-color" as any]: splitViewMode === "media_main" ? "#22c55e" : trackTheme.waveColor,
                 ["--wave-glow" as any]: splitViewMode === "media_main" ? "rgba(34,197,94,0.45)" : trackTheme.glowColor,
@@ -1078,6 +1082,7 @@ export const DynamicNotch: React.FC = () => {
           <div className="notch-split-container">
             <div className="dynamic-notch notch-split-main notch-split-main--default"
               onClick={handleExpandSettings}
+              onMouseEnter={() => scheduleHoverExpand("settings")}
               style={{ ["--wave-color" as any]: "#22c55e", ["--wave-glow" as any]: "rgba(34,197,94,0.45)", cursor: "pointer" }}>
               <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
               {renderLightBorder()}{renderNotchBgCover(false)}
@@ -1100,6 +1105,7 @@ export const DynamicNotch: React.FC = () => {
               </div>
             </div>
             <div className="dynamic-notch notch-split-secondary" onClick={handleExpandBluetooth}
+              onMouseEnter={() => scheduleHoverExpand("bluetooth")}
               style={{ ["--wave-color" as any]: "#22c55e", ["--wave-glow" as any]: "rgba(34,197,94,0.45)", cursor: "pointer" }}
               title={`Bluetooth: ${activeBtDevice?.name} (${activeBtDevice?.battery_percent ?? 100}%)`}>
               <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
@@ -1121,6 +1127,7 @@ export const DynamicNotch: React.FC = () => {
         {showMediaCompact && (
             <div key="compact-media" className={`dynamic-notch dynamic-notch--activity ${volumeFeedbackVisible ? "dynamic-notch--volume-feedback" : ""}`}
             onClick={(e) => handleExpandMedia(e)}
+            onMouseEnter={() => scheduleHoverExpand("media")}
             style={{
               ["--wave-color" as any]: trackTheme.waveColor,
               ["--wave-gradient" as any]: trackTheme.waveGradient,
@@ -1169,6 +1176,7 @@ export const DynamicNotch: React.FC = () => {
         {showIdleCompact && (
           <div key="compact-idle" className={`dynamic-notch dynamic-notch--compact ${volumeFeedbackVisible ? "dynamic-notch--volume-feedback" : ""}`}
             onClick={handleExpandSettings}
+            onMouseEnter={() => scheduleHoverExpand("settings")}
             style={{ ["--wave-color" as any]: "#22c55e", ["--wave-glow" as any]: "rgba(34,197,94,0.45)", cursor: "pointer" }}>
             <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
             {renderLightBorder()}{renderNotchBgCover(false)}
