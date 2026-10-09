@@ -82,6 +82,31 @@ struct ArtCacheEntry {
 
 static ART_CACHE: Mutex<Option<ArtCacheEntry>> = Mutex::new(None);
 static ART_FETCHING_KEY: Mutex<Option<(String, String)>> = Mutex::new(None);
+static LAST_VALID_TRACK: Mutex<Option<MediaSessionInfo>> = Mutex::new(None);
+
+pub fn is_genuine_track(title: &str, artist: &str, app_id: &str) -> bool {
+    let t = title.trim();
+    if t.is_empty() {
+        return false;
+    }
+    let friendly = get_friendly_source_name(app_id).to_lowercase();
+    let t_lower = t.to_lowercase();
+    let a_lower = artist.trim().to_lowercase();
+
+    let generic_names = [
+        "spotify", "chrome", "google chrome", "edge", "microsoft edge",
+        "brave", "firefox", "opera", "vivaldi", "arc", "vlc", "vlc media player",
+        "media player", "windows media player", "movies & tv", "local media"
+    ];
+
+    if generic_names.contains(&t_lower.as_str()) || t_lower == friendly {
+        if a_lower.is_empty() || a_lower == t_lower || generic_names.contains(&a_lower.as_str()) {
+            return false;
+        }
+    }
+
+    true
+}
 
 fn extract_browser_media_title(raw: &str) -> Option<String> {
     let mut title = raw.trim();
@@ -608,7 +633,7 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
             let app_id = session.SourceAppUserModelId().map(|s| s.to_string()).unwrap_or_default();
             let props = session.TryGetMediaPropertiesAsync().ok().and_then(|op| op.get().ok());
 
-            let (raw_title, raw_artist, album_title, send_thumb_opt) = if let Some(ref p) = props {
+            let (raw_title, raw_artist, mut album_title, send_thumb_opt) = if let Some(ref p) = props {
                 let t = p.Title().map(|s| s.to_string()).unwrap_or_default();
                 let a = p.Artist().map(|s| s.to_string()).unwrap_or_default();
                 let alb = p.AlbumTitle().map(|s| s.to_string()).ok();
@@ -631,25 +656,25 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
                 get_friendly_source_name(&app_id)
             };
 
-            // Cross-reference open browser windows to prevent out-of-sync or stale titles
+            // Cross-reference open browser windows only if GSMTC title is truly empty or generic
             let app_id_lower = app_id.to_lowercase();
             let is_browser_session = app_id_lower.contains("edge") || app_id_lower.contains("edg")
                 || app_id_lower.contains("chrome") || app_id_lower.contains("brave")
                 || app_id_lower.contains("firefox") || app_id_lower.contains("opera");
 
-            let mut is_stale_props = false;
             if is_browser_session {
-                if let Some(b_title) = find_matching_browser_title(&app_id_lower) {
-                    let t_lower = title.to_lowercase();
-                    let b_lower = b_title.to_lowercase();
-                    let is_generic = t_lower.is_empty() || t_lower == "edge" || t_lower == "chrome" || t_lower == "brave" || t_lower == "youtube";
-                    let prefix_len = std::cmp::min(12, t_lower.len());
-                    let prefix_match = prefix_len > 0 && b_lower.contains(&t_lower[..prefix_len]);
+                let t_lower = title.to_lowercase();
+                let is_generic = t_lower.is_empty()
+                    || t_lower == "edge"
+                    || t_lower == "chrome"
+                    || t_lower == "brave"
+                    || t_lower == "firefox"
+                    || t_lower == "opera"
+                    || t_lower == "youtube";
 
-                    if is_generic || !prefix_match {
-                        if !is_generic && !prefix_match {
-                            is_stale_props = true;
-                        }
+                // Never overwrite a valid track title with a browser tab title!
+                if is_generic {
+                    if let Some(b_title) = find_matching_browser_title(&app_id_lower) {
                         title = b_title;
                     }
                 }
@@ -659,16 +684,31 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
             resolved_title = title.clone();
 
             // Extract clean artist or fallback to application/source name
-            let artist = if !raw_artist.trim().is_empty() {
+            let mut artist = if !raw_artist.trim().is_empty() {
                 raw_artist.trim().to_string()
             } else {
                 get_friendly_source_name(&app_id)
             };
 
+            // If current title/artist is generic or empty (e.g. app paused or properties dropped),
+            // recover from LAST_VALID_TRACK so paused track is firmly preserved!
+            let current_is_genuine = is_genuine_track(&title, &artist, &app_id);
+            if !current_is_genuine {
+                if let Ok(guard) = LAST_VALID_TRACK.lock() {
+                    if let Some(ref last) = *guard {
+                        title = last.title.clone();
+                        artist = last.artist.clone();
+                        if album_title.is_none() {
+                            album_title = last.album_title.clone();
+                        }
+                    }
+                }
+            }
+
             let has_track_details = !title.trim().is_empty() || !artist.trim().is_empty();
             if has_track_details || is_playing {
                 let timeline = session.GetTimelineProperties().ok();
-                let (current_sec, duration_sec, position_ms, duration_ms) = if let Some(tl) = timeline {
+                let (mut current_sec, mut duration_sec, mut position_ms, mut duration_ms) = if let Some(tl) = timeline {
                     let start_ticks = tl.StartTime().map(|d| d.Duration).unwrap_or(0);
                     let end_ticks = tl.EndTime().map(|d| d.Duration).unwrap_or(0);
                     let pos_ticks = tl.Position().map(|d| d.Duration).unwrap_or(0);
@@ -725,6 +765,22 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
                     (0, 0, None, None)
                 };
 
+                // If duration or position dropped on pause, restore from LAST_VALID_TRACK
+                if duration_sec == 0 {
+                    if let Ok(guard) = LAST_VALID_TRACK.lock() {
+                        if let Some(ref last) = *guard {
+                            if last.title == title {
+                                duration_sec = last.duration_sec;
+                                duration_ms = last.duration_ms;
+                                if current_sec == 0 && last.current_sec > 0 {
+                                    current_sec = last.current_sec;
+                                    position_ms = last.position_ms;
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Asynchronous, non-blocking thumbnail extraction on background thread without stalling UI
                 let mut album_art_base64: Option<String> = None;
                 let mut needs_fetch = false;
@@ -741,7 +797,18 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
                     }
                 }
 
-                if (needs_fetch || album_art_base64.is_none()) && !is_stale_props {
+                // If album art was not found in ART_CACHE, check LAST_VALID_TRACK
+                if album_art_base64.is_none() {
+                    if let Ok(guard) = LAST_VALID_TRACK.lock() {
+                        if let Some(ref last) = *guard {
+                            if last.title == title && last.album_art_base64.is_some() {
+                                album_art_base64 = last.album_art_base64.clone();
+                            }
+                        }
+                    }
+                }
+
+                if needs_fetch || album_art_base64.is_none() {
                     if let Some(send_thumb) = send_thumb_opt {
                         let key = (title.clone(), artist.clone());
                         let mut should_spawn = false;
@@ -765,10 +832,17 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
                                 let art = send_thumb.extract();
                                 if let Ok(mut art_guard) = ART_CACHE.lock() {
                                     *art_guard = Some(ArtCacheEntry {
-                                        title: t_clone,
-                                        artist: a_clone,
-                                        art_base64: art,
+                                        title: t_clone.clone(),
+                                        artist: a_clone.clone(),
+                                        art_base64: art.clone(),
                                     });
+                                }
+                                if let Ok(mut last_guard) = LAST_VALID_TRACK.lock() {
+                                    if let Some(ref mut last) = *last_guard {
+                                        if last.title == t_clone {
+                                            last.album_art_base64 = art.clone();
+                                        }
+                                    }
                                 }
                                 if let Ok(mut fetch_guard) = ART_FETCHING_KEY.lock() {
                                     *fetch_guard = None;
@@ -779,17 +853,34 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
                     }
                 }
 
-                session_info = Some(MediaSessionInfo {
-                    title,
-                    artist,
-                    album_title,
+                let session_info_obj = MediaSessionInfo {
+                    title: title.clone(),
+                    artist: artist.clone(),
+                    album_title: album_title.clone(),
                     is_playing,
                     duration_sec,
                     current_sec,
-                    album_art_base64,
+                    album_art_base64: album_art_base64.clone(),
                     position_ms,
                     duration_ms,
-                });
+                };
+
+                // Keep LAST_VALID_TRACK fresh whenever we have a genuine track
+                if is_genuine_track(&title, &artist, &app_id) {
+                    if let Ok(mut guard) = LAST_VALID_TRACK.lock() {
+                        let mut entry = session_info_obj.clone();
+                        if entry.album_art_base64.is_none() {
+                            if let Some(ref prev) = *guard {
+                                if prev.title == entry.title {
+                                    entry.album_art_base64 = prev.album_art_base64.clone();
+                                }
+                            }
+                        }
+                        *guard = Some(entry);
+                    }
+                }
+
+                session_info = Some(session_info_obj);
             }
         }
     }
@@ -802,7 +893,7 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
             if gsmtc.is_playing && !gsmtc.title.is_empty() {
                 Some(gsmtc)
             } else if w32.is_playing && !w32.title.is_empty() {
-                // Actively playing Win32 player (e.g. VLC playing in background) overrides paused/idle GSMTC session!
+                // Actively playing Win32 player overrides paused/idle GSMTC session
                 Some(w32)
             } else {
                 Some(gsmtc)
@@ -817,6 +908,24 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
         }
         (None, Some(w32)) => Some(w32),
         (None, None) => None,
+    };
+
+    // If final_session is None (e.g. GSMTC momentarily returns no session right after pausing),
+    // retain LAST_VALID_TRACK in paused state so the notch never drops the paused song!
+    let final_session = if final_session.is_none() {
+        if let Ok(last_guard) = LAST_VALID_TRACK.lock() {
+            if let Some(ref last) = *last_guard {
+                let mut paused_last = last.clone();
+                paused_last.is_playing = false;
+                Some(paused_last)
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    } else {
+        final_session
     };
 
     cache.last_fetch = Some(now);

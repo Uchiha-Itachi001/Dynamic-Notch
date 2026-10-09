@@ -33,6 +33,21 @@ let anchorPositionSec = 0;
 let anchorTimestamp = performance.now();
 let optimisticPlayState: { target: boolean; expiresAt: number } | null = null;
 
+let lastKnownTrack: MediaSessionInfo | null = null;
+let lastKnownArt: string | undefined = undefined;
+let nullSessionCounter = 0;
+
+const GENERIC_NAMES = new Set([
+  "spotify", "chrome", "google chrome", "edge", "microsoft edge",
+  "brave", "firefox", "opera", "vivaldi", "arc", "vlc", "vlc media player",
+  "media player", "windows media player", "movies & tv", "local media"
+]);
+
+function isGenericTitle(title?: string): boolean {
+  if (!title || !title.trim()) return true;
+  return GENERIC_NAMES.has(title.trim().toLowerCase());
+}
+
 function notifyListeners() {
   listeners.forEach((fn) => fn(currentState));
 }
@@ -71,48 +86,113 @@ function updatePlaybackTicker() {
 }
 
 function processIncomingSession(session: MediaSessionInfo | null) {
-  if (!session || (!session.title?.trim() && !session.artist?.trim())) {
-    if (currentState.hasLiveMedia) {
-      anchorPositionSec = 0;
-      anchorTimestamp = performance.now();
-      currentState = DEFAULT_STATE;
-      notifyListeners();
-      updatePlaybackTicker();
+  if (session && (session.title?.trim() || session.artist?.trim())) {
+    nullSessionCounter = 0;
+    let title = session.title?.trim() || "";
+    let artist = session.artist?.trim() || "";
+    let art: string | undefined = session.album_art_base64 || undefined;
+
+    // If incoming title is generic (e.g. app name on pause), restore last known valid title/artist
+    if (isGenericTitle(title) && lastKnownTrack && !isGenericTitle(lastKnownTrack.title)) {
+      title = lastKnownTrack.title;
+      if (!artist || isGenericTitle(artist)) {
+        artist = lastKnownTrack.artist;
+      }
     }
+
+    // If incoming art is missing (e.g. stream dropped on pause), restore last known art
+    if (!art && lastKnownTrack && (lastKnownTrack.title === title || isGenericTitle(session.title))) {
+      art = lastKnownTrack.album_art_base64 || lastKnownArt;
+    }
+
+    if (art) {
+      lastKnownArt = art;
+    }
+
+    const duration = session.duration_sec || (session.duration_ms ? Math.floor(session.duration_ms / 1000) : 0) || (lastKnownTrack?.duration_sec ?? 0);
+    const currentSec = session.current_sec || (session.position_ms ? Math.floor(session.position_ms / 1000) : 0) || (lastKnownTrack?.current_sec ?? 0);
+    const progressPercent = duration > 0 ? (currentSec / duration) * 100 : 0;
+
+    const mergedSession: MediaSessionInfo = {
+      ...session,
+      title,
+      artist,
+      album_art_base64: art || undefined,
+      duration_sec: duration,
+      current_sec: currentSec,
+    };
+
+    if (!isGenericTitle(title)) {
+      lastKnownTrack = mergedSession;
+    }
+
+    let isPlaying = session.is_playing;
+    if (optimisticPlayState) {
+      if (performance.now() > optimisticPlayState.expiresAt) {
+        optimisticPlayState = null;
+      } else {
+        isPlaying = optimisticPlayState.target;
+      }
+    }
+
+    anchorPositionSec = currentSec;
+    anchorTimestamp = performance.now();
+
+    const theme = albumArtService.getColorTheme(title, artist, art || undefined);
+
+    // Performance Optimization: Deduplicate state updates if nothing changed
+    if (
+      currentState.hasLiveMedia &&
+      currentState.liveMedia?.title === title &&
+      currentState.liveMedia?.artist === artist &&
+      currentState.liveMedia?.album_art_base64 === art &&
+      currentState.isPlaying === isPlaying &&
+      Math.abs(currentState.currentSec - currentSec) < 1 &&
+      currentState.durationSec === duration
+    ) {
+      return;
+    }
+
+    currentState = {
+      liveMedia: mergedSession,
+      dynamicTheme: theme,
+      isPlaying,
+      currentSec,
+      durationSec: duration,
+      progressPercent,
+      hasLiveMedia: true,
+    };
+
+    notifyListeners();
+    updatePlaybackTicker();
     return;
   }
 
-  const art = session.album_art_base64;
-  const theme = albumArtService.getColorTheme(session.title, session.artist, art);
-
-  const duration = session.duration_sec || (session.duration_ms ? Math.floor(session.duration_ms / 1000) : 0);
-  const currentSec = session.current_sec || (session.position_ms ? Math.floor(session.position_ms / 1000) : 0);
-  const progressPercent = duration > 0 ? (currentSec / duration) * 100 : 0;
-
-  anchorPositionSec = currentSec;
-  anchorTimestamp = performance.now();
-
-  let isPlaying = session.is_playing;
-  if (optimisticPlayState) {
-    if (performance.now() > optimisticPlayState.expiresAt) {
-      optimisticPlayState = null;
-    } else {
-      isPlaying = optimisticPlayState.target;
+  // Incoming session is null or has no title
+  if (lastKnownTrack) {
+    // Retain previous playing track in paused state during momentary pause drops
+    nullSessionCounter++;
+    if (nullSessionCounter < 10) {
+      if (currentState.isPlaying) {
+        currentState = {
+          ...currentState,
+          isPlaying: false,
+        };
+        notifyListeners();
+        updatePlaybackTicker();
+      }
+      return;
     }
   }
 
-  currentState = {
-    liveMedia: { ...session, album_art_base64: art },
-    dynamicTheme: theme,
-    isPlaying,
-    currentSec,
-    durationSec: duration,
-    progressPercent,
-    hasLiveMedia: true,
-  };
-
-  notifyListeners();
-  updatePlaybackTicker();
+  // Extended absence of media: reset to default
+  if (currentState.hasLiveMedia) {
+    anchorPositionSec = 0;
+    anchorTimestamp = performance.now();
+    currentState = DEFAULT_STATE;
+    notifyListeners();
+    updatePlaybackTicker();
+  }
 }
 
 async function fetchAndUpdate() {

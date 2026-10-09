@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { CalendarDays, LayoutDashboard, Music2 } from "lucide-react";
+import { CalendarDays, LayoutDashboard, Music2, Volume2 } from "lucide-react";
 import { useSystemMetrics } from "../hooks/useSystemMetrics";
 import { useMediaSession } from "../hooks/useMediaSession";
 import { useBluetooth } from "../hooks/useBluetooth";
@@ -443,7 +443,7 @@ export const DynamicNotch: React.FC = () => {
     return (
       <div
         className={`notch-compact-battery-widget ${isCharging ? "notch-compact-battery-widget--charging" : ""}`}
-        title={`Battery: ${safePct}%${isCharging ? " (Charging)" : ""}`}
+        aria-label={`Battery: ${safePct}%${isCharging ? " (Charging)" : ""}`}
       >
         <div className="notch-battery-gauge-wrapper">
           <svg width="18" height="18" viewBox="0 0 18 18" className="notch-battery-ring-svg">
@@ -610,18 +610,18 @@ export const DynamicNotch: React.FC = () => {
                 <span className="notch-time-label">{formatTime(activeDuration)}</span>
               </div>
               <div className="notch-card-controls-row">
-                <button className="notch-btn-icon" onClick={focusMediaApp} title="Open Playing App">
+                <button className="notch-btn-icon" onClick={focusMediaApp} aria-label="Open Playing App">
                   <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
                     <polyline points="15 3 21 3 21 9" /><line x1="10" y1="14" x2="21" y2="3" />
                   </svg>
                 </button>
-                <button className="notch-btn-icon" onClick={handlePrevTrack} title="Previous">
+                <button className="notch-btn-icon" onClick={handlePrevTrack} aria-label="Previous">
                   <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
                     <path d="M22 5.5a1.2 1.2 0 0 0-1.85-.98L13.3 9.7a1.2 1.2 0 0 0 0 1.96l6.85 5.18A1.2 1.2 0 0 0 22 15.86V5.5zm-11 0a1.2 1.2 0 0 0-1.85-.98L2.3 9.7a1.2 1.2 0 0 0 0 1.96l6.85 5.18A1.2 1.2 0 0 0 11 15.86V5.5z" />
                   </svg>
                 </button>
-                <button className="notch-btn-icon notch-btn-icon--play" onClick={handleTogglePlay} title={activeIsPlaying ? "Pause" : "Play"}>
+                <button className="notch-btn-icon notch-btn-icon--play" onClick={handleTogglePlay} aria-label={activeIsPlaying ? "Pause" : "Play"}>
                   {activeIsPlaying ? (
                     <svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor">
                       <rect x="5.5" y="3.5" width="4.5" height="17" rx="1.8" /><rect x="14" y="3.5" width="4.5" height="17" rx="1.8" />
@@ -632,7 +632,7 @@ export const DynamicNotch: React.FC = () => {
                     </svg>
                   )}
                 </button>
-                <button className="notch-btn-icon" onClick={handleNextTrack} title="Next">
+                <button className="notch-btn-icon" onClick={handleNextTrack} aria-label="Next">
                   <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
                     <path d="M2 5.5a1.2 1.2 0 0 1 1.85-.98L10.7 9.7a1.2 1.2 0 0 1 0 1.96l-6.85 5.18A1.2 1.2 0 0 1 2 15.86V5.5zm11 0a1.2 1.2 0 0 1 1.85-.98L21.7 9.7a1.2 1.2 0 0 1 0 1.96l-6.85 5.18A1.2 1.2 0 0 1 13 15.86V5.5z" />
                   </svg>
@@ -983,12 +983,12 @@ export const DynamicNotch: React.FC = () => {
                 <span className="notch-bt-name">{activeBtDevice?.name || "Bluetooth Device"}</span>
               </div>
               <div className="notch-bt-battery-ring-container">
-                <svg className="notch-bt-ring-svg" width="42" height="42" viewBox="0 0 42 42">
-                  <circle cx="21" cy="21" r={15} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="3.2" />
-                  <circle cx="21" cy="21" r={15} fill="none" stroke="#22c55e" strokeWidth="3.2" strokeLinecap="round"
-                    strokeDasharray={2 * Math.PI * 15}
-                    strokeDashoffset={2 * Math.PI * 15 - ((activeBtDevice?.battery_percent ?? 100) / 100) * 2 * Math.PI * 15}
-                    transform="rotate(-90 21 21)"
+                <svg className="notch-bt-ring-svg" width="36" height="36" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r={14.5} fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="2.4" />
+                  <circle cx="18" cy="18" r={14.5} fill="none" stroke="#22c55e" strokeWidth="2.4" strokeLinecap="round"
+                    strokeDasharray={2 * Math.PI * 14.5}
+                    strokeDashoffset={2 * Math.PI * 14.5 - ((activeBtDevice?.battery_percent ?? 100) / 100) * 2 * Math.PI * 14.5}
+                    transform="rotate(-90 18 18)"
                     style={{ transition: "stroke-dashoffset 0.6s cubic-bezier(0.16, 1, 0.3, 1)" }} />
                 </svg>
                 <span className="notch-bt-ring-text">
@@ -1019,15 +1019,27 @@ export const DynamicNotch: React.FC = () => {
               <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
               {renderLightBorder()}{renderNotchBgCover(splitViewMode === "media_main")}
               {splitViewMode === "media_main" ? (
-                <div className="notch-split-media-layout" title={activeTitle}>
+                <div className="notch-split-media-layout" aria-label={activeTitle}>
                   <div className="notch-album-thumb">
                     <img src={liveMedia?.album_art_base64 || "/albumcover-placeholder.png"} alt="Album Art"
                       onError={(e) => { (e.target as HTMLImageElement).src = "/albumcover-placeholder.png"; }} />
                   </div>
-                  <span className="notch-split-media-name">{activeTitle}</span>
-                  <div className={`notch-equalizer-wave ${!activeIsPlaying ? "notch-equalizer-wave--paused" : ""}`}>
-                    <span className="notch-wave-bar" /><span className="notch-wave-bar" /><span className="notch-wave-bar" /><span className="notch-wave-bar" />
-                  </div>
+                  {volumeFeedbackVisible ? (
+                    <div className="notch-split-inline-volume">
+                      <Volume2 size={11} strokeWidth={2.4} color="#38bdf8" />
+                      <div className="notch-inline-volume-bar" style={{ height: "3.5px" }}>
+                        <div className="notch-inline-volume-fill" style={{ width: `${inlineVolumePct}%` }} />
+                      </div>
+                      <span className="notch-split-volume-text">{inlineVolumePct}%</span>
+                    </div>
+                  ) : (
+                    <>
+                      <span className="notch-split-media-name">{activeTitle}</span>
+                      <div className={`notch-equalizer-wave ${!activeIsPlaying ? "notch-equalizer-wave--paused" : ""}`}>
+                        <span className="notch-wave-bar" /><span className="notch-wave-bar" /><span className="notch-wave-bar" /><span className="notch-wave-bar" />
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="notch-split-bt-layout">
@@ -1036,7 +1048,17 @@ export const DynamicNotch: React.FC = () => {
                       <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5" />
                     </svg>
                   </div>
-                  <div className="notch-split-bt-name">{activeBtDevice?.name || "Bluetooth"}</div>
+                  {volumeFeedbackVisible ? (
+                    <div className="notch-split-inline-volume">
+                      <Volume2 size={11} strokeWidth={2.4} color="#38bdf8" />
+                      <div className="notch-inline-volume-bar" style={{ height: "3.5px" }}>
+                        <div className="notch-inline-volume-fill" style={{ width: `${inlineVolumePct}%` }} />
+                      </div>
+                      <span className="notch-split-volume-text">{inlineVolumePct}%</span>
+                    </div>
+                  ) : (
+                    <div className="notch-split-bt-name">{activeBtDevice?.name || "Bluetooth"}</div>
+                  )}
                   <div className="notch-mini-battery-ring">
                     <svg width="13" height="13" viewBox="0 0 13 13">
                       <circle cx="6.5" cy="6.5" r={4.8} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.8" />
@@ -1054,7 +1076,7 @@ export const DynamicNotch: React.FC = () => {
               style={{
                 ["--wave-color" as any]: splitViewMode === "media_main" ? "#22c55e" : trackTheme.waveColor,
                 ["--wave-glow" as any]: splitViewMode === "media_main" ? "rgba(34,197,94,0.45)" : trackTheme.glowColor,
-              }} title={splitViewMode === "media_main" ? "Switch active card" : activeTitle}>
+              }} aria-label={splitViewMode === "media_main" ? "Switch active card" : activeTitle}>
               <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
               {renderLightBorder()}{renderNotchBgCover(splitViewMode !== "media_main")}
               {splitViewMode === "media_main" ? (
@@ -1104,21 +1126,29 @@ export const DynamicNotch: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="dynamic-notch notch-split-secondary" onClick={handleExpandBluetooth}
+            <div className={`dynamic-notch notch-split-secondary ${volumeFeedbackVisible ? "notch-split-secondary--volume" : ""}`}
+              onClick={handleExpandBluetooth}
               onMouseEnter={() => scheduleHoverExpand("bluetooth")}
               style={{ ["--wave-color" as any]: "#22c55e", ["--wave-glow" as any]: "rgba(34,197,94,0.45)", cursor: "pointer" }}
-              title={`Bluetooth: ${activeBtDevice?.name} (${activeBtDevice?.battery_percent ?? 100}%)`}>
+              aria-label={`Bluetooth: ${activeBtDevice?.name} (${activeBtDevice?.battery_percent ?? 100}%)`}>
               <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
               {renderLightBorder()}{renderNotchBgCover(false)}
-              <div className="notch-mini-battery-ring">
-                <svg width="13" height="13" viewBox="0 0 13 13">
-                  <circle cx="6.5" cy="6.5" r={4.8} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.8" />
-                  <circle cx="6.5" cy="6.5" r={4.8} fill="none" stroke="#22c55e" strokeWidth="1.8" strokeLinecap="round"
-                    strokeDasharray={2 * Math.PI * 4.8}
-                    strokeDashoffset={2 * Math.PI * 4.8 - ((activeBtDevice?.battery_percent ?? 85) / 100) * 2 * Math.PI * 4.8}
-                    transform="rotate(-90 6.5 6.5)" />
-                </svg>
-              </div>
+              {volumeFeedbackVisible ? (
+                <div className="notch-compact-volume" style={{ padding: "0 4px" }}>
+                  <Volume2 size={11} strokeWidth={2.4} color="#38bdf8" />
+                  <span>{inlineVolumePct}%</span>
+                </div>
+              ) : (
+                <div className="notch-mini-battery-ring">
+                  <svg width="13" height="13" viewBox="0 0 13 13">
+                    <circle cx="6.5" cy="6.5" r={4.8} fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.8" />
+                    <circle cx="6.5" cy="6.5" r={4.8} fill="none" stroke="#22c55e" strokeWidth="1.8" strokeLinecap="round"
+                      strokeDasharray={2 * Math.PI * 4.8}
+                      strokeDashoffset={2 * Math.PI * 4.8 - ((activeBtDevice?.battery_percent ?? 85) / 100) * 2 * Math.PI * 4.8}
+                      transform="rotate(-90 6.5 6.5)" />
+                  </svg>
+                </div>
+              )}
             </div>
           </div>
         )}
