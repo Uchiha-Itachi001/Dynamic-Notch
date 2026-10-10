@@ -910,29 +910,25 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
         (None, None) => None,
     };
 
-    // If final_session is None (e.g. GSMTC momentarily returns no session right after pausing),
-    // retain LAST_VALID_TRACK in paused state so the notch never drops the paused song!
-    let final_session = if final_session.is_none() {
-        if let Ok(last_guard) = LAST_VALID_TRACK.lock() {
-            if let Some(ref last) = *last_guard {
-                let mut paused_last = last.clone();
-                paused_last.is_playing = false;
-                Some(paused_last)
-            } else {
-                None
-            }
-        } else {
-            None
+    // When no media player is active/running, wipe stale caches so dead media is never resurrected
+    if final_session.is_none() {
+        if let Ok(mut guard) = LAST_VALID_TRACK.lock() {
+            *guard = None;
         }
+        if let Ok(mut guard) = ART_CACHE.lock() {
+            *guard = None;
+        }
+        cache.active_session = None;
+        cache.active_app_id.clear();
+        cache.active_title.clear();
     } else {
-        final_session
-    };
+        cache.active_session = selected_session;
+        cache.active_app_id = resolved_app_id;
+        cache.active_title = resolved_title;
+    }
 
     cache.last_fetch = Some(now);
     cache.cached_session = final_session.clone();
-    cache.active_session = selected_session;
-    cache.active_app_id = resolved_app_id;
-    cache.active_title = resolved_title;
 
     final_session
 }

@@ -198,6 +198,12 @@ export const DynamicNotch: React.FC = () => {
     tauriBridge.setNotchExpanded(false);
   };
 
+  useEffect(() => {
+    if (!hasMediaSession && expandedType === "media") {
+      handleCollapse();
+    }
+  }, [hasMediaSession, expandedType]);
+
   const hoverTargetRef = useRef<"media" | "settings" | "bluetooth" | null>(null);
 
   const scheduleHoverExpand = (target?: "media" | "settings" | "bluetooth") => {

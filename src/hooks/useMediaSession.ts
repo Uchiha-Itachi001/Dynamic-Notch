@@ -35,7 +35,6 @@ let optimisticPlayState: { target: boolean; expiresAt: number } | null = null;
 
 let lastKnownTrack: MediaSessionInfo | null = null;
 let lastKnownArt: string | undefined = undefined;
-let nullSessionCounter = 0;
 
 const GENERIC_NAMES = new Set([
   "spotify", "chrome", "google chrome", "edge", "microsoft edge",
@@ -86,8 +85,7 @@ function updatePlaybackTicker() {
 }
 
 function processIncomingSession(session: MediaSessionInfo | null) {
-  if (session && (session.title?.trim() || session.artist?.trim())) {
-    nullSessionCounter = 0;
+  if (session && (session.title?.trim() || session.artist?.trim() || session.is_playing)) {
     let title = session.title?.trim() || "";
     let artist = session.artist?.trim() || "";
     let art: string | undefined = session.album_art_base64 || undefined;
@@ -168,24 +166,10 @@ function processIncomingSession(session: MediaSessionInfo | null) {
     return;
   }
 
-  // Incoming session is null or has no title
-  if (lastKnownTrack) {
-    // Retain previous playing track in paused state during momentary pause drops
-    nullSessionCounter++;
-    if (nullSessionCounter < 10) {
-      if (currentState.isPlaying) {
-        currentState = {
-          ...currentState,
-          isPlaying: false,
-        };
-        notifyListeners();
-        updatePlaybackTicker();
-      }
-      return;
-    }
-  }
+  // Incoming session is null, closed, or has no track details: wipe caches and reset immediately
+  lastKnownTrack = null;
+  lastKnownArt = undefined;
 
-  // Extended absence of media: reset to default
   if (currentState.hasLiveMedia) {
     anchorPositionSec = 0;
     anchorTimestamp = performance.now();

@@ -105,6 +105,7 @@ pub fn run() {
             services::bluetooth::start();
             services::system_events::start(app.handle().clone());
             services::activity::start(app.handle().clone());
+            services::fullscreen::start(app.handle().clone());
 
             // Background RAM trimmer: flushes unused heap pages every 45s
             std::thread::spawn(|| {

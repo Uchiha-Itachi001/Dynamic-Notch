@@ -8,8 +8,9 @@ use windows::Win32::Graphics::Dwm::{
 use windows::Win32::Graphics::Gdi::{CreateRectRgn, SetWindowRgn};
 use windows::Win32::UI::Controls::MARGINS;
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetWindowLongW, SetWindowLongW, SetWindowPos, SetWindowTextW, GWL_EXSTYLE, GWL_STYLE,
-    HWND_TOPMOST, SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
+    GetWindowLongW, SetWindowLongW, SetWindowPos, SetWindowTextW, ShowWindow,
+    GWL_EXSTYLE, GWL_STYLE, HWND_TOPMOST, SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
+    SW_HIDE, SW_SHOWNOACTIVATE,
     WS_BORDER, WS_CAPTION, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW, WS_MAXIMIZEBOX,
     WS_MINIMIZEBOX, WS_POPUP, WS_SYSMENU, WS_THICKFRAME, WS_VISIBLE,
 };
@@ -28,6 +29,7 @@ pub struct NotchWindowConfig {
 static NOTCH_CONFIG: Mutex<Option<NotchWindowConfig>> = Mutex::new(None);
 static IS_EXPANDED: AtomicBool = AtomicBool::new(false);
 static IS_PEEK: AtomicBool = AtomicBool::new(false);
+static IS_FULLSCREEN_SUPPRESSED: AtomicBool = AtomicBool::new(false);
 
 unsafe extern "system" fn notch_subclass_proc(
     hwnd: windows::Win32::Foundation::HWND,
@@ -156,6 +158,35 @@ pub fn set_peek(peek: bool) {
     update_region();
 }
 
+pub fn set_fullscreen_suppressed(suppressed: bool) {
+    let prev = IS_FULLSCREEN_SUPPRESSED.swap(suppressed, Ordering::Relaxed);
+    if prev != suppressed {
+        update_region();
+    }
+}
+
+pub fn is_fullscreen_suppressed() -> bool {
+    IS_FULLSCREEN_SUPPRESSED.load(Ordering::Relaxed)
+}
+
+pub fn get_notch_hwnd() -> Option<HWND> {
+    if let Ok(guard) = NOTCH_CONFIG.lock() {
+        if let Some(c) = *guard {
+            return Some(HWND(c.hwnd as *mut _));
+        }
+    }
+    None
+}
+
+pub fn get_notch_monitor() -> Option<(i32, i32, i32, i32)> {
+    if let Ok(guard) = NOTCH_CONFIG.lock() {
+        if let Some(c) = *guard {
+            return Some((c.monitor_x, c.monitor_y, c.monitor_w, c.monitor_h));
+        }
+    }
+    None
+}
+
 pub fn update_region() {
     let config = match NOTCH_CONFIG.lock() {
         Ok(guard) => match *guard {
@@ -170,10 +201,23 @@ pub fn update_region() {
     let monitor_h = config.monitor_h;
     let scale = config.scale_factor;
 
+    let suppressed = IS_FULLSCREEN_SUPPRESSED.load(Ordering::Relaxed);
     let expanded = IS_EXPANDED.load(Ordering::Relaxed);
     let peek = IS_PEEK.load(Ordering::Relaxed);
 
     unsafe {
+        if suppressed {
+            // Fullscreen application active (movie, video, photo viewer, game):
+            // Fully hide notch window and set 0 region so it never blocks the screen
+            let rgn_empty = CreateRectRgn(0, 0, 0, 0);
+            let _ = SetWindowRgn(hwnd, Some(rgn_empty), false);
+            let _ = ShowWindow(hwnd, SW_HIDE);
+            return;
+        }
+
+        // Restore window visibility without stealing focus from active application
+        let _ = ShowWindow(hwnd, SW_SHOWNOACTIVATE);
+
         let mut client_rect = windows::Win32::Foundation::RECT::default();
         let _ = windows::Win32::UI::WindowsAndMessaging::GetClientRect(hwnd, &mut client_rect);
         let actual_w = if client_rect.right > client_rect.left {
