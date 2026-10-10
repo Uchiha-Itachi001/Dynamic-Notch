@@ -1472,23 +1472,89 @@
 .settings-console-detail strong { overflow: hidden; color: #fff; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
 .settings-console-detail small { overflow: hidden; color: rgba(235, 235, 245, 0.45); font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
 
-.settings-console-switch { position: relative; width: 27px; height: 16px; flex: 0 0 27px; padding: 2px; border: 0; border-radius: 999px; background: rgba(255, 255, 255, 0.16); cursor: pointer; }
-.settings-console-switch span { display: block; width: 12px; height: 12px; border-radius: 50%; background: rgba(255, 255, 255, 0.82); transition: transform 0.18s ease; }
-.settings-console-switch--on { background: #30d158; }
-.settings-console-switch--on span { transform: translateX(11px); background: #fff; }
-.settings-console-choice-row,
+.settings-console-switch {
+  position: relative;
+  width: 38px;
+  height: 22px;
+  flex: 0 0 38px;
+  padding: 2.5px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  cursor: pointer;
+  transition: background 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.12s ease;
+}
+.settings-console-switch:hover {
+  background: rgba(255, 255, 255, 0.24);
+  transform: scale(1.03);
+}
+.settings-console-switch span {
+  display: block;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1.5px 3.5px rgba(0, 0, 0, 0.36), 0 0 1px rgba(0, 0, 0, 0.2);
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.settings-console-switch--on {
+  background: #30d158;
+  box-shadow: 0 0 10px rgba(48, 209, 88, 0.35);
+}
+.settings-console-switch--on:hover {
+  background: #34c759;
+}
+.settings-console-switch--on span {
+  transform: translateX(16px);
+  background: #ffffff;
+}
+
+.settings-console-choice-column {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 98px;
+  flex: 0 0 98px;
+}
+.settings-console-choice-item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 5px;
+  width: 100%;
+  padding: 3.5px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(235, 235, 245, 0.65);
+  cursor: pointer;
+  font: inherit;
+  font-size: 7.5px;
+  font-weight: 600;
+  letter-spacing: -0.1px;
+  transition: border-color 0.16s ease, background 0.16s ease, color 0.16s ease, transform 0.12s ease;
+}
+.settings-console-choice-item:hover {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.08);
+}
+.settings-console-choice-item--active {
+  border-color: rgba(48, 209, 88, 0.65);
+  background: rgba(48, 209, 88, 0.14);
+  color: #30d158;
+  box-shadow: 0 0 8px rgba(48, 209, 88, 0.18);
+}
+.settings-console-choice-item .choice-check {
+  margin-left: auto;
+  color: #30d158;
+}
+
 .settings-console-key-row { width: 100%; gap: 4px; }
-.settings-console-choice-row button,
 .settings-console-key-row button { display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-width: 0; padding: 4px 6px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 5px; background: rgba(255, 255, 255, 0.035); color: rgba(235, 235, 245, 0.55); cursor: pointer; font: inherit; font-size: 7px; }
-.settings-console-choice-row button { flex: 1; }
 .settings-console-key-row button { flex: 1; }
-.settings-console-choice-row button:hover,
 .settings-console-key-row button:hover { color: #fff; border-color: rgba(255, 255, 255, 0.28); }
-.settings-console-choice-row button.settings-console-choice--active,
 .settings-console-key-row button.settings-console-key--active { border-color: rgba(48, 209, 88, 0.65); background: rgba(48, 209, 88, 0.12); color: #30d158; }
-.settings-console-choice-swatch { width: 6px; height: 6px; border-radius: 2px; }
-.settings-console-choice-swatch--black { background: #090a0c; border: 1px solid rgba(255, 255, 255, 0.25); }
-.settings-console-choice-swatch--art { background: linear-gradient(135deg, #ff453a, #bf5af2, #30d158); }
 
 .app-settings-layout {
   display: grid;

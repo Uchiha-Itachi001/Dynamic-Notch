@@ -1,4 +1,4 @@
-import { Check, Keyboard, MousePointer2, Palette, Power } from "lucide-react";
+import { Check, Image, Keyboard, Moon, MousePointer2, Palette, Power } from "lucide-react";
 import { useEffect, useState } from "react";
 import { tauriBridge } from "../services/tauriBridge";
 
@@ -100,11 +100,33 @@ export function SettingsPanel({
           </div>
         )}
         {section === "appearance" && (
-          <div className="settings-console-detail settings-console-detail--wide">
-            <div><span className="settings-console-kicker">SURFACE</span><strong>Media background</strong><small>Choose the active media finish.</small></div>
-            <div className="settings-console-choice-row" role="group" aria-label="Media background">
-              <button type="button" className={mediaBgMode === "black" ? "settings-console-choice--active" : ""} onClick={() => onMediaBgModeChange("black")} aria-pressed={mediaBgMode === "black"}><span className="settings-console-choice-swatch settings-console-choice-swatch--black" />Black{mediaBgMode === "black" && <Check size={10} />}</button>
-              <button type="button" className={mediaBgMode === "cover" ? "settings-console-choice--active" : ""} onClick={() => onMediaBgModeChange("cover")} aria-pressed={mediaBgMode === "cover"}><span className="settings-console-choice-swatch settings-console-choice-swatch--art" />Artwork{mediaBgMode === "cover" && <Check size={10} />}</button>
+          <div className="settings-console-detail">
+            <div>
+              <span className="settings-console-kicker">SURFACE</span>
+              <strong>Media background</strong>
+              <small>Choose the active media finish.</small>
+            </div>
+            <div className="settings-console-choice-column" role="group" aria-label="Media background">
+              <button
+                type="button"
+                className={`settings-console-choice-item ${mediaBgMode === "black" ? "settings-console-choice-item--active" : ""}`}
+                onClick={() => onMediaBgModeChange("black")}
+                aria-pressed={mediaBgMode === "black"}
+              >
+                <Moon size={11} strokeWidth={2.2} />
+                <span>Pitch Black</span>
+                {mediaBgMode === "black" && <Check size={10} strokeWidth={2.5} className="choice-check" />}
+              </button>
+              <button
+                type="button"
+                className={`settings-console-choice-item ${mediaBgMode === "cover" ? "settings-console-choice-item--active" : ""}`}
+                onClick={() => onMediaBgModeChange("cover")}
+                aria-pressed={mediaBgMode === "cover"}
+              >
+                <Image size={11} strokeWidth={2.2} />
+                <span>Artwork</span>
+                {mediaBgMode === "cover" && <Check size={10} strokeWidth={2.5} className="choice-check" />}
+              </button>
             </div>
           </div>
         )}
