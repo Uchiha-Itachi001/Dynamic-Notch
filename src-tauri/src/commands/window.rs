@@ -10,6 +10,11 @@ pub fn set_notch_peek(peek: bool) {
     window_manager::set_peek(peek);
 }
 
+#[tauri::command]
+pub fn set_notch_hover_active(app: tauri::AppHandle, hovered: bool, peek_key: Option<String>) {
+    window_manager::set_hover_active(app, hovered, peek_key.unwrap_or_else(|| "Shift".to_string()));
+}
+
 #[link(name = "user32")]
 extern "system" {
     fn LockWorkStation() -> windows::core::BOOL;

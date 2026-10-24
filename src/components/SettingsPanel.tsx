@@ -4,7 +4,7 @@ import { tauriBridge } from "../services/tauriBridge";
 
 type SettingsSection = "interaction" | "appearance" | "peek" | "startup";
 type MediaBackgroundMode = "black" | "cover";
-type PeekKey = "Shift" | "Control" | " " | "Tab";
+type PeekKey = "Shift" | "Control";
 
 interface SettingsPanelProps {
   expandOnHover: boolean;
@@ -25,8 +25,6 @@ const sections: Array<{ id: SettingsSection; label: string; icon: typeof MousePo
 const peekKeys: Array<{ value: PeekKey; label: string }> = [
   { value: "Shift", label: "Shift" },
   { value: "Control", label: "Ctrl" },
-  { value: " ", label: "Space" },
-  { value: "Tab", label: "Tab" },
 ];
 
 export function SettingsPanel({

@@ -99,10 +99,10 @@ export const DynamicNotch: React.FC = () => {
       return true;
     }
   });
-  const [peekKey, setPeekKey] = useState<"Shift" | "Control" | " " | "Tab">(() => {
+  const [peekKey, setPeekKey] = useState<"Shift" | "Control">(() => {
     try {
       const saved = localStorage.getItem("notch_peek_key");
-      return saved === "Control" || saved === " " || saved === "Tab" ? saved : "Shift";
+      return saved === "Control" ? "Control" : "Shift";
     } catch {
       return "Shift";
     }
@@ -124,14 +124,44 @@ export const DynamicNotch: React.FC = () => {
   const hoverTimeoutRef = useRef<number | null>(null);
   const collapseTimeoutRef = useRef<number | null>(null);
   const [isHoverExpanded, setIsHoverExpanded] = useState<boolean>(false);
-  const [isShiftDown, setIsShiftDown] = useState(false);
   const [isNotchHovered, setIsNotchHovered] = useState(false);
+  const [isPeekActive, setIsPeekActive] = useState<boolean>(false);
 
-  const isShiftPeek = expandedType === null && osd.type === null && isShiftDown && isNotchHovered;
-
+  // Subscribe to native Rust global peek state and hover tracking
   useEffect(() => {
-    tauriBridge.setNotchPeek(isShiftPeek);
-  }, [isShiftPeek]);
+    let unlistenPeek: (() => void) | null = null;
+    let unlistenHover: (() => void) | null = null;
+
+    tauriBridge.onNotchPeekChanged((peek) => {
+      setIsPeekActive(peek);
+      if (peek) {
+        // Instantly kill pending hover timer so the card never expands while peeking
+        if (hoverTimeoutRef.current) {
+          window.clearTimeout(hoverTimeoutRef.current);
+          hoverTimeoutRef.current = null;
+        }
+      }
+    }).then((un) => {
+      unlistenPeek = un;
+    });
+
+    tauriBridge.onNotchHoverState((hovered) => {
+      setIsNotchHovered(hovered);
+      if (!hovered) {
+        if (hoverTimeoutRef.current) {
+          window.clearTimeout(hoverTimeoutRef.current);
+          hoverTimeoutRef.current = null;
+        }
+      }
+    }).then((un) => {
+      unlistenHover = un;
+    });
+
+    return () => {
+      if (unlistenPeek) unlistenPeek();
+      if (unlistenHover) unlistenHover();
+    };
+  }, []);
 
   useEffect(() => {
     tauriBridge.setNotchExpanded(expandedType !== null);
@@ -193,9 +223,11 @@ export const DynamicNotch: React.FC = () => {
     if (hoverTimeoutRef.current) { window.clearTimeout(hoverTimeoutRef.current); hoverTimeoutRef.current = null; }
     hoverTargetRef.current = null;
     setIsHoverExpanded(false);
+    setIsPeekActive(false);
     setExpandedType(null);
     setHoveredMetric(null);
     tauriBridge.setNotchExpanded(false);
+    tauriBridge.setNotchHoverActive(false, peekKey);
   };
 
   useEffect(() => {
@@ -208,11 +240,12 @@ export const DynamicNotch: React.FC = () => {
 
   const scheduleHoverExpand = (target?: "media" | "settings" | "bluetooth") => {
     setIsNotchHovered(true);
+    tauriBridge.setNotchHoverActive(true, peekKey);
     if (target) {
       hoverTargetRef.current = target;
     }
     if (collapseTimeoutRef.current) { window.clearTimeout(collapseTimeoutRef.current); collapseTimeoutRef.current = null; }
-    if (expandOnHover && expandedType === null && osd.type === null) {
+    if (expandOnHover && expandedType === null && osd.type === null && !isPeekActive) {
       if (hoverTimeoutRef.current) window.clearTimeout(hoverTimeoutRef.current);
       hoverTimeoutRef.current = window.setTimeout(() => {
         tauriBridge.setNotchExpanded(true);
@@ -228,7 +261,10 @@ export const DynamicNotch: React.FC = () => {
   };
 
   const handleMouseLeave = () => {
-    if (!isShiftDown) setIsNotchHovered(false);
+    if (!isPeekActive) {
+      setIsNotchHovered(false);
+      tauriBridge.setNotchHoverActive(false, peekKey);
+    }
     hoverTargetRef.current = null;
     if (hoverTimeoutRef.current) { window.clearTimeout(hoverTimeoutRef.current); hoverTimeoutRef.current = null; }
     if (isHoverExpanded && expandedType !== null) {
@@ -324,8 +360,17 @@ export const DynamicNotch: React.FC = () => {
   // ── Keyboard Shortcuts (Media controls & navigation) ───────────────────────
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === peekKey || (peekKey === " " && e.code === "Space")) setIsShiftDown(true);
-      if (e.key === peekKey || (peekKey === " " && e.code === "Space")) {
+      const isTargetPeekKey = e.key === peekKey
+        || (peekKey === "Control" && e.key === "Control")
+        || (peekKey === "Shift" && e.key === "Shift");
+
+      if (isTargetPeekKey) {
+        if (hoverTimeoutRef.current) {
+          window.clearTimeout(hoverTimeoutRef.current);
+          hoverTimeoutRef.current = null;
+        }
+        setIsPeekActive(true);
+        tauriBridge.setNotchPeek(true);
         e.preventDefault();
         return;
       }
@@ -398,10 +443,20 @@ export const DynamicNotch: React.FC = () => {
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === peekKey || (peekKey === " " && e.code === "Space")) { setIsShiftDown(false); setIsNotchHovered(false); }
+      const isTargetPeekKey = e.key === peekKey
+        || (peekKey === "Control" && e.key === "Control")
+        || (peekKey === "Shift" && e.key === "Shift");
+
+      if (isTargetPeekKey) {
+        setIsPeekActive(false);
+        tauriBridge.setNotchPeek(false);
+      }
     };
 
-    const handleBlur = () => { setIsShiftDown(false); setIsNotchHovered(false); };
+    const handleBlur = () => {
+      setIsPeekActive(false);
+      tauriBridge.setNotchPeek(false);
+    };
 
     window.addEventListener("keydown", handleKeyDown);
     window.addEventListener("keyup", handleKeyUp);
@@ -523,7 +578,7 @@ export const DynamicNotch: React.FC = () => {
   const activeOSD = osd.type;
 
   // Whether we should show an OSD card overtaking the main notch
-  const showingOSD = activeOSD !== null && expandedType === null;
+  const showingOSD = activeOSD !== null && expandedType === null && !isPeekActive;
 
   // ── Determine base idle state ─────────────────────────────────────────────
   const showIdleCompact = expandedType === null && !showingOSD && !isMultiActivity && !hasMediaSession && (!isBtConnected || activeBtDevice === null);
@@ -542,7 +597,7 @@ export const DynamicNotch: React.FC = () => {
       )}
 
       <div
-        className={`dynamic-notch-wrapper ${isShiftPeek ? "dynamic-notch-wrapper--peek-through" : ""}`}
+        className={`dynamic-notch-wrapper ${isPeekActive ? "dynamic-notch-wrapper--peek-through" : ""} ${isNotchHovered ? "dynamic-notch-wrapper--hovered" : ""}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onWheel={expandedType === "app-settings" ? undefined : handleWheel}

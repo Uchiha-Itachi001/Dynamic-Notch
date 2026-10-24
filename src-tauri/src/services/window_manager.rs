@@ -1,14 +1,16 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::Mutex;
-use windows::Win32::Foundation::HWND;
+use tauri::{AppHandle, Emitter};
+use windows::Win32::Foundation::{HWND, POINT};
 use windows::Win32::Graphics::Dwm::{
     DwmExtendFrameIntoClientArea, DwmSetWindowAttribute, DWMNCRP_DISABLED,
     DWMWA_NCRENDERING_POLICY, DWMWA_TRANSITIONS_FORCEDISABLED,
 };
 use windows::Win32::Graphics::Gdi::{CreateRectRgn, SetWindowRgn};
 use windows::Win32::UI::Controls::MARGINS;
+use windows::Win32::UI::Input::KeyboardAndMouse::{GetAsyncKeyState, VK_CONTROL, VK_SHIFT};
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetWindowLongW, SetWindowLongW, SetWindowPos, SetWindowTextW, ShowWindow,
+    GetCursorPos, GetWindowLongW, SetWindowLongW, SetWindowPos, SetWindowTextW, ShowWindow,
     GWL_EXSTYLE, GWL_STYLE, HWND_TOPMOST, SWP_FRAMECHANGED, SWP_NOACTIVATE, SWP_NOMOVE, SWP_NOSIZE,
     SW_HIDE, SW_SHOWNOACTIVATE,
     WS_BORDER, WS_CAPTION, WS_EX_APPWINDOW, WS_EX_TOOLWINDOW, WS_MAXIMIZEBOX,
@@ -30,6 +32,8 @@ static NOTCH_CONFIG: Mutex<Option<NotchWindowConfig>> = Mutex::new(None);
 static IS_EXPANDED: AtomicBool = AtomicBool::new(false);
 static IS_PEEK: AtomicBool = AtomicBool::new(false);
 static IS_FULLSCREEN_SUPPRESSED: AtomicBool = AtomicBool::new(false);
+static HOVER_SESSION_ID: AtomicU64 = AtomicU64::new(0);
+static CURRENT_PEEK_KEY: Mutex<String> = Mutex::new(String::new());
 
 unsafe extern "system" fn notch_subclass_proc(
     hwnd: windows::Win32::Foundation::HWND,
@@ -154,8 +158,131 @@ pub fn set_expanded(expanded: bool) {
 }
 
 pub fn set_peek(peek: bool) {
-    IS_PEEK.store(peek, Ordering::Relaxed);
-    update_region();
+    let prev = IS_PEEK.swap(peek, Ordering::Relaxed);
+    if prev != peek {
+        update_region();
+    }
+}
+
+pub fn set_hover_active(app: AppHandle, hovered: bool, peek_key: String) {
+    if let Ok(mut guard) = CURRENT_PEEK_KEY.lock() {
+        *guard = peek_key;
+    }
+
+    if hovered {
+        let session_id = HOVER_SESSION_ID.fetch_add(1, Ordering::SeqCst) + 1;
+        std::thread::Builder::new()
+            .name("notch-peek-watcher".to_string())
+            .spawn(move || {
+                run_peek_watcher(app, session_id);
+            })
+            .ok();
+    } else {
+        // Invalidate any active hover watcher session
+        HOVER_SESSION_ID.fetch_add(1, Ordering::SeqCst);
+        if IS_PEEK.swap(false, Ordering::Relaxed) {
+            update_region();
+            let _ = app.emit("notch-peek-changed", false);
+        }
+    }
+}
+
+fn run_peek_watcher(app: AppHandle, session_id: u64) {
+    let mut last_key_down = false;
+
+    while HOVER_SESSION_ID.load(Ordering::SeqCst) == session_id {
+        let key_str = CURRENT_PEEK_KEY
+            .lock()
+            .map(|g| g.clone())
+            .unwrap_or_else(|_| "Shift".to_string());
+
+        let vkey = match key_str.as_str() {
+            "Control" | "Ctrl" => VK_CONTROL.0 as i32,
+            _ => VK_SHIFT.0 as i32,
+        };
+
+        // 1. Check global physical key state (pure non-action modifiers only)
+        let key_is_down = unsafe { (GetAsyncKeyState(vkey) as u16 & 0x8000) != 0 };
+        last_key_down = key_is_down;
+
+        // 2. Check cursor position relative to notch
+        let mut pt = POINT::default();
+        let cursor_ok = unsafe { GetCursorPos(&mut pt).is_ok() };
+
+        let cursor_over_notch = if cursor_ok {
+            if let Ok(guard) = NOTCH_CONFIG.lock() {
+                if let Some(c) = *guard {
+                    let scale = c.scale_factor;
+                    let notch_w = (204.0 * scale).round() as i32;
+                    let notch_h = (34.0 * scale).round() as i32;
+                    let notch_left = c.monitor_x + ((c.monitor_w - notch_w) / 2).max(0);
+                    let notch_right = notch_left + notch_w;
+                    let notch_top = c.monitor_y;
+                    let notch_bottom = notch_top + notch_h;
+
+                    // Generous 20px hit-test buffer around compact notch
+                    pt.x >= (notch_left - 20)
+                        && pt.x <= (notch_right + 20)
+                        && pt.y >= (notch_top - 5)
+                        && pt.y <= (notch_bottom + 20)
+                } else {
+                    true
+                }
+            } else {
+                true
+            }
+        } else {
+            true
+        };
+
+        // If card was explicitly expanded, don't interfere with expanded mode
+        if IS_EXPANDED.load(Ordering::Relaxed) {
+            if IS_PEEK.swap(false, Ordering::Relaxed) {
+                update_region();
+                let _ = app.emit("notch-peek-changed", false);
+            }
+            std::thread::sleep(std::time::Duration::from_millis(30));
+            continue;
+        }
+
+        let was_peek = IS_PEEK.load(Ordering::Relaxed);
+
+        if key_is_down && !was_peek {
+            // User pressed peek key while hovering -> empty window region (100% click-through)
+            IS_PEEK.store(true, Ordering::Relaxed);
+            update_region();
+            let _ = app.emit("notch-peek-changed", true);
+        } else if !key_is_down && was_peek {
+            // User released peek key -> restore compact window region
+            IS_PEEK.store(false, Ordering::Relaxed);
+            update_region();
+            let _ = app.emit("notch-peek-changed", false);
+
+            // Re-assert hover state so cursor remains active over the notch
+            let _ = app.emit("notch-hover-state", cursor_over_notch);
+        }
+
+        // If key is released and cursor has departed the notch, disarm only this exact session
+        if !key_is_down && !cursor_over_notch {
+            let _ = HOVER_SESSION_ID.compare_exchange(
+                session_id,
+                session_id.wrapping_add(1),
+                Ordering::SeqCst,
+                Ordering::Relaxed,
+            );
+            let _ = app.emit("notch-hover-state", false);
+            break;
+        }
+
+        std::thread::sleep(std::time::Duration::from_millis(16)); // ~60fps responsive polling
+    }
+
+    if HOVER_SESSION_ID.load(Ordering::SeqCst) == session_id || !last_key_down {
+        if IS_PEEK.swap(false, Ordering::Relaxed) {
+            update_region();
+            let _ = app.emit("notch-peek-changed", false);
+        }
+    }
 }
 
 pub fn set_fullscreen_suppressed(suppressed: bool) {
@@ -275,4 +402,5 @@ pub fn update_region() {
         }
     }
 }
+
 

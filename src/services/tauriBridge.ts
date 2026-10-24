@@ -157,6 +157,14 @@ export const tauriBridge = {
     }
   },
 
+  setNotchHoverActive: async (hovered: boolean, peekKey?: string): Promise<void> => {
+    try {
+      await invoke("set_notch_hover_active", { hovered, peekKey });
+    } catch (e) {
+      console.error("setNotchHoverActive error:", e);
+    }
+  },
+
   launchApp: async (cmd: string): Promise<void> => {
     try {
       await invoke("launch_app", { cmd });
@@ -224,6 +232,18 @@ export const tauriBridge = {
 
   onDownloadUpdated: (callback: (payload: DownloadActivity) => void): Promise<UnlistenFn> => {
     return listen<DownloadActivity>("download-updated", (event) => {
+      callback(event.payload);
+    });
+  },
+
+  onNotchPeekChanged: (callback: (peek: boolean) => void): Promise<UnlistenFn> => {
+    return listen<boolean>("notch-peek-changed", (event) => {
+      callback(event.payload);
+    });
+  },
+
+  onNotchHoverState: (callback: (hovered: boolean) => void): Promise<UnlistenFn> => {
+    return listen<boolean>("notch-hover-state", (event) => {
       callback(event.payload);
     });
   },

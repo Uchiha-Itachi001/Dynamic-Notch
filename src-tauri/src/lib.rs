@@ -45,6 +45,7 @@ pub fn run() {
             commands::system::set_auto_start,
             commands::window::set_notch_expanded,
             commands::window::set_notch_peek,
+            commands::window::set_notch_hover_active,
             commands::window::launch_app,
             commands::window::open_windows_settings,
             commands::window::power_action,
