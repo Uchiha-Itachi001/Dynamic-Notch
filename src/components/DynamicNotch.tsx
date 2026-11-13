@@ -59,7 +59,7 @@ export const DynamicNotch: React.FC = () => {
       setDisplayStyle(targetStyle);
       setMorphAnimation(null);
       morphTimeoutRef.current = null;
-    }, 850);
+    }, 720);
   }, []);
 
   useEffect(() => {

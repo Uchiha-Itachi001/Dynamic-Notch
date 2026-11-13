@@ -4860,17 +4860,17 @@
 /* Light border comet fades smoothly during morph without abrupt pop */
 .dynamic-notch-wrapper--morph-to-island .notch-light-border,
 .dynamic-notch-wrapper--morph-to-notch .notch-light-border {
-  animation: morphBorderFade 850ms ease forwards;
+  animation: morphBorderFade 720ms ease forwards;
 }
 
 @keyframes morphBorderFade {
   0% {
     opacity: 0.8;
   }
-  15%, 55% {
+  15%, 50% {
     opacity: 0;
   }
-  80% {
+  75% {
     opacity: 0.6;
   }
   100% {
@@ -4881,14 +4881,15 @@
 /* ── 1. NOTCH -> ISLAND ─────────────────────────────────────────────────── */
 
 .dynamic-notch-wrapper--morph-to-island {
-  animation: morphWrapperNotchToIsland 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: morphWrapperNotchToIsland 720ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes morphWrapperNotchToIsland {
-  0%, 28% {
+  0%, 24% {
     transform: translateX(-50%) translateY(0);
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
-  52%, 100% {
+  50%, 100% {
     transform: translateX(-50%) translateY(14px);
   }
 }
@@ -4906,7 +4907,7 @@
 
 /* Media Activity Variant: Expands to authentic 205px-255px with 7px padding */
 .dynamic-notch-wrapper--morph-to-island .dynamic-notch--activity {
-  animation: morphNotchToIslandActivity 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation: morphNotchToIslandActivity 720ms ease forwards !important;
 }
 
 @keyframes morphNotchToIslandActivity {
@@ -4920,45 +4921,32 @@
     border-bottom-left-radius: 14px;
     border-bottom-right-radius: 14px;
     padding: 0 9px;
+    animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  14% {
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-    border-bottom-left-radius: 16px;
-    border-bottom-right-radius: 16px;
+  12% {
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+    border-bottom-left-radius: 18px;
+    border-bottom-right-radius: 18px;
     padding: 0 4px;
   }
-  28% {
-    width: 35px;
+  26% {
+    width: auto;
     min-width: 35px;
     max-width: 35px;
     height: 35px;
     border-radius: 50%;
     padding: 0;
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
-  52% {
-    width: 35px;
+  50% {
+    width: auto;
     min-width: 35px;
     max-width: 35px;
     height: 35px;
     border-radius: 50%;
     padding: 0;
-  }
-  72% {
-    width: 255px;
-    min-width: 245px;
-    max-width: 265px;
-    height: 35px;
-    border-radius: 18px;
-    padding: 0 12px 0 7px;
-  }
-  86% {
-    width: 220px;
-    min-width: 205px;
-    max-width: 255px;
-    height: 35px;
-    border-radius: 18px;
-    padding: 0 12px 0 7px;
+    animation-timing-function: cubic-bezier(0.28, 1.22, 0.55, 1);
   }
   100% {
     width: auto;
@@ -4972,7 +4960,7 @@
 
 /* Idle Compact Variant: Expands to authentic 175px-215px with 14px padding */
 .dynamic-notch-wrapper--morph-to-island .dynamic-notch--compact {
-  animation: morphNotchToIslandCompact 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation: morphNotchToIslandCompact 720ms ease forwards !important;
 }
 
 @keyframes morphNotchToIslandCompact {
@@ -4986,45 +4974,32 @@
     border-bottom-left-radius: 14px;
     border-bottom-right-radius: 14px;
     padding: 0 12px;
+    animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  14% {
-    border-top-left-radius: 16px;
-    border-top-right-radius: 16px;
-    border-bottom-left-radius: 16px;
-    border-bottom-right-radius: 16px;
+  12% {
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+    border-bottom-left-radius: 18px;
+    border-bottom-right-radius: 18px;
     padding: 0 4px;
   }
-  28% {
-    width: 35px;
+  26% {
+    width: auto;
     min-width: 35px;
     max-width: 35px;
     height: 35px;
     border-radius: 50%;
     padding: 0;
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
-  52% {
-    width: 35px;
+  50% {
+    width: auto;
     min-width: 35px;
     max-width: 35px;
     height: 35px;
     border-radius: 50%;
     padding: 0;
-  }
-  72% {
-    width: 225px;
-    min-width: 215px;
-    max-width: 235px;
-    height: 35px;
-    border-radius: 18px;
-    padding: 0 14px;
-  }
-  86% {
-    width: 190px;
-    min-width: 180px;
-    max-width: 215px;
-    height: 35px;
-    border-radius: 18px;
-    padding: 0 14px;
+    animation-timing-function: cubic-bezier(0.28, 1.22, 0.55, 1);
   }
   100% {
     width: auto;
@@ -5038,17 +5013,18 @@
 
 /* Ears fade out into transparency immediately */
 .dynamic-notch-wrapper--morph-to-island .notch-ear {
-  animation: morphEarsFadeOut 850ms ease forwards !important;
+  animation: morphEarsFadeOut 720ms ease forwards !important;
 }
 
 @keyframes morphEarsFadeOut {
   0% {
     opacity: 1;
     transform: scale(1);
+    animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
   14%, 100% {
     opacity: 0;
-    transform: scale(0.2);
+    transform: scale(0.3);
     pointer-events: none;
   }
 }
@@ -5057,25 +5033,23 @@
 .dynamic-notch-wrapper--morph-to-island .notch-compact-layout,
 .dynamic-notch-wrapper--morph-to-island .notch-activity-layout,
 .dynamic-notch-wrapper--morph-to-island .notch-split-container {
-  animation: morphContentNotchToIsland 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation: morphContentNotchToIsland 720ms ease forwards !important;
 }
 
 @keyframes morphContentNotchToIsland {
   0% {
     opacity: 1;
     transform: scale(1);
+    animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  12% {
+  16% {
     opacity: 0;
-    transform: scale(0.65);
+    transform: scale(0.75);
   }
-  52% {
+  50% {
     opacity: 0;
-    transform: scale(0.65);
-  }
-  74% {
-    opacity: 0.9;
-    transform: scale(1.02);
+    transform: scale(0.85);
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
   100% {
     opacity: 1;
@@ -5085,7 +5059,7 @@
 
 /* Album thumbnail: squircle 15px to circle 23px */
 .dynamic-notch-wrapper--morph-to-island .notch-album-thumb {
-  animation: morphThumbSquircleToCircle 850ms ease forwards !important;
+  animation: morphThumbSquircleToCircle 720ms ease forwards !important;
 }
 
 .dynamic-notch-wrapper--morph-to-island .notch-album-thumb img {
@@ -5097,16 +5071,18 @@
     width: 15px;
     height: 15px;
     border-radius: 3.5px;
+    animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  18% {
+  16% {
     width: 15px;
     height: 15px;
     border-radius: 3.5px;
   }
-  60% {
-    width: 23px;
-    height: 23px;
+  50% {
+    width: 15px;
+    height: 15px;
     border-radius: 50%;
+    animation-timing-function: cubic-bezier(0.28, 1.22, 0.55, 1);
   }
   100% {
     width: 23px;
@@ -5124,14 +5100,15 @@
 /* ── 2. ISLAND -> NOTCH (REVERSE) ───────────────────────────────────────── */
 
 .dynamic-notch-wrapper--morph-to-notch {
-  animation: morphWrapperIslandToNotch 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: morphWrapperIslandToNotch 720ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes morphWrapperIslandToNotch {
-  0%, 28% {
+  0%, 18% {
     transform: translateX(-50%) translateY(14px);
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
-  52%, 100% {
+  50%, 100% {
     transform: translateX(-50%) translateY(0);
   }
 }
@@ -5149,7 +5126,7 @@
 
 /* Media Activity Variant: Contracts from 205-255px to 150-185px */
 .dynamic-notch-wrapper--morph-to-notch .dynamic-notch--activity {
-  animation: morphIslandToNotchActivity 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation: morphIslandToNotchActivity 720ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 @keyframes morphIslandToNotchActivity {
@@ -5160,8 +5137,9 @@
     height: 35px;
     border-radius: 18px;
     padding: 0 12px 0 7px;
+    animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  28% {
+  18% {
     width: 35px;
     min-width: 35px;
     max-width: 35px;
@@ -5169,7 +5147,7 @@
     border-radius: 50%;
     padding: 0;
   }
-  52% {
+  48% {
     width: 35px;
     min-width: 35px;
     max-width: 35px;
@@ -5177,35 +5155,17 @@
     border-radius: 50%;
     padding: 0;
   }
-  56% {
-    height: 26px;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    border-bottom-left-radius: 14px;
-    border-bottom-right-radius: 14px;
-    padding: 0;
-  }
-  70% {
-    width: 190px;
-    min-width: 185px;
-    max-width: 190px;
+  50% {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
     height: 26px;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     border-bottom-left-radius: 14px;
     border-bottom-right-radius: 14px;
     padding: 0 9px;
-  }
-  86% {
-    width: 170px;
-    min-width: 160px;
-    max-width: 185px;
-    height: 26px;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    border-bottom-left-radius: 14px;
-    border-bottom-right-radius: 14px;
-    padding: 0 9px;
+    animation-timing-function: cubic-bezier(0.28, 1.20, 0.55, 1);
   }
   100% {
     width: auto;
@@ -5222,7 +5182,7 @@
 
 /* Idle Compact Variant: Contracts from 175-215px to 148-180px */
 .dynamic-notch-wrapper--morph-to-notch .dynamic-notch--compact {
-  animation: morphIslandToNotchCompact 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation: morphIslandToNotchCompact 720ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 @keyframes morphIslandToNotchCompact {
@@ -5233,8 +5193,9 @@
     height: 35px;
     border-radius: 18px;
     padding: 0 14px;
+    animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  28% {
+  18% {
     width: 35px;
     min-width: 35px;
     max-width: 35px;
@@ -5242,7 +5203,7 @@
     border-radius: 50%;
     padding: 0;
   }
-  52% {
+  48% {
     width: 35px;
     min-width: 35px;
     max-width: 35px;
@@ -5250,35 +5211,17 @@
     border-radius: 50%;
     padding: 0;
   }
-  56% {
-    height: 26px;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    border-bottom-left-radius: 14px;
-    border-bottom-right-radius: 14px;
-    padding: 0;
-  }
-  70% {
-    width: 185px;
-    min-width: 180px;
-    max-width: 185px;
+  50% {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
     height: 26px;
     border-top-left-radius: 0;
     border-top-right-radius: 0;
     border-bottom-left-radius: 14px;
     border-bottom-right-radius: 14px;
     padding: 0 12px;
-  }
-  86% {
-    width: 165px;
-    min-width: 155px;
-    max-width: 175px;
-    height: 26px;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
-    border-bottom-left-radius: 14px;
-    border-bottom-right-radius: 14px;
-    padding: 0 12px;
+    animation-timing-function: cubic-bezier(0.28, 1.20, 0.55, 1);
   }
   100% {
     width: auto;
@@ -5298,7 +5241,7 @@
   display: block !important;
   opacity: 0;
   pointer-events: none;
-  animation: morphEarsFadeIn 850ms ease forwards !important;
+  animation: morphEarsFadeIn 720ms ease forwards !important;
 }
 
 .dynamic-notch-wrapper--morph-to-notch .notch-ear--left {
@@ -5310,15 +5253,16 @@
 }
 
 @keyframes morphEarsFadeIn {
-  0%, 50% {
+  0%, 48% {
     opacity: 0;
     transform: scale(0.3);
     pointer-events: none;
   }
-  60% {
-    opacity: 1;
-    transform: scale(1);
+  50% {
+    opacity: 0;
+    transform: scale(0.5);
     pointer-events: none;
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
   100% {
     opacity: 1;
@@ -5331,25 +5275,23 @@
 .dynamic-notch-wrapper--morph-to-notch .notch-compact-layout,
 .dynamic-notch-wrapper--morph-to-notch .notch-activity-layout,
 .dynamic-notch-wrapper--morph-to-notch .notch-split-container {
-  animation: morphContentIslandToNotch 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+  animation: morphContentIslandToNotch 720ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 @keyframes morphContentIslandToNotch {
   0% {
     opacity: 1;
     transform: scale(1);
+    animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  12% {
+  15% {
     opacity: 0;
-    transform: scale(0.65);
+    transform: scale(0.75);
   }
-  52% {
+  50% {
     opacity: 0;
-    transform: scale(0.65);
-  }
-  74% {
-    opacity: 0.9;
-    transform: scale(1.02);
+    transform: scale(0.85);
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
   100% {
     opacity: 1;
@@ -5359,7 +5301,7 @@
 
 /* Album thumbnail: circle 23px to squircle 15px */
 .dynamic-notch-wrapper--morph-to-notch .notch-album-thumb {
-  animation: morphThumbCircleToSquircle 850ms ease forwards !important;
+  animation: morphThumbCircleToSquircle 720ms ease forwards !important;
 }
 
 .dynamic-notch-wrapper--morph-to-notch .notch-album-thumb img {
@@ -5371,16 +5313,18 @@
     width: 23px;
     height: 23px;
     border-radius: 50%;
+    animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  20% {
+  16% {
     width: 23px;
     height: 23px;
     border-radius: 50%;
   }
-  55% {
+  50% {
     width: 15px;
     height: 15px;
     border-radius: 3.5px;
+    animation-timing-function: cubic-bezier(0.28, 1.20, 0.55, 1);
   }
   100% {
     width: 15px;
