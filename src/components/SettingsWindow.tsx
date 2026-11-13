@@ -118,7 +118,6 @@ export function SettingsWindow() {
     setDisplayStyle(style);
     localStorage.setItem("notch_display_style", style);
     await tauriBridge.broadcastSettingChange("displayStyle", style);
-    await emit("notch-settings-updated", { key: "displayStyle", value: style });
   };
 
   return (

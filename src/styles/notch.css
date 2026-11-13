@@ -247,7 +247,7 @@
   padding: 0 12px;
   border-bottom-left-radius: 16px;
   border-bottom-right-radius: 16px;
-  animation: notchPillBounce var(--notch-duration-bounce) var(--notch-ease-spring) both;
+  animation: none !important;
 }
 
 .notch-activity-layout {
@@ -275,7 +275,7 @@
   background: #1e293b;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
   transition: transform var(--notch-duration-fast) var(--notch-ease-spring-snappy);
-  animation: notchElementPop 0.35s var(--notch-ease-spring) both;
+  animation: none !important;
 }
 
 .dynamic-notch:hover .notch-album-thumb {
@@ -361,7 +361,7 @@
   padding: 0 12px;
   border-bottom-left-radius: 15px;
   border-bottom-right-radius: 15px;
-  animation: notchPillBounce var(--notch-duration-bounce) var(--notch-ease-spring) both;
+  animation: none !important;
 }
 
 .notch-compact-layout {

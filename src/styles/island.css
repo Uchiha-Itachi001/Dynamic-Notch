@@ -374,7 +374,7 @@
   padding: 0 12px;
   border-bottom-left-radius: 14px;
   border-bottom-right-radius: 14px;
-  animation: notch-activate-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: none !important;
 }
 
 .notch-compact-layout {
@@ -385,7 +385,7 @@
   justify-content: space-between;
   width: 100%;
   gap: 12px;
-  animation: notchContentFadeIn var(--glace-duration-base) var(--glace-ease-spring) both;
+  animation: none !important;
 }
 
 .notch-compact-left {
@@ -488,7 +488,7 @@
   padding: 0 9px;
   border-bottom-left-radius: 14px;
   border-bottom-right-radius: 14px;
-  animation: notch-activate-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: none !important;
 }
 
 .notch-activity-layout {
@@ -500,7 +500,7 @@
   width: 100%;
   gap: 6px;
   padding: 0 1px;
-  animation: notchContentFadeIn var(--glace-duration-base) var(--glace-ease-spring) both;
+  animation: none !important;
 }
 
 .notch-activity-left {
@@ -522,7 +522,7 @@
   flex-shrink: 0;
   overflow: hidden;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-  animation: notchThumbPop var(--glace-duration-base) var(--glace-ease-spring) both;
+  animation: none !important;
 }
 
 .notch-album-thumb img {
@@ -632,7 +632,7 @@
   height: 26px;
   border-bottom-left-radius: 14px;
   border-bottom-right-radius: 14px;
-  animation: notch-activate-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: none !important;
   transition: all var(--glace-duration-base) var(--glace-ease-spring) !important;
 }
 
@@ -720,7 +720,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: notch-activate-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both;
+  animation: none !important;
   transition: all var(--glace-duration-base) var(--glace-ease-spring) !important;
 }
 
@@ -955,20 +955,20 @@
   animation: notch-element-spring 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) 0.14s both;
 }
 
-/* Staggered spring bounce on active compact notch elements */
+/* Compact notch activity inner elements remain stable without redundant entrance flash */
+.dynamic-notch--activity,
+.dynamic-notch--compact,
+.notch-activity-layout,
+.notch-compact-layout,
+.notch-album-thumb,
 .dynamic-notch--activity .notch-activity-left,
-.dynamic-notch--active .notch-activity-left {
-  animation: notch-element-spring 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
 .dynamic-notch--activity .notch-activity-middle,
-.dynamic-notch--active .notch-activity-middle {
-  animation: notch-element-spring 0.40s cubic-bezier(0.34, 1.56, 0.64, 1) 0.03s both;
-}
-
 .dynamic-notch--activity .notch-activity-right,
-.dynamic-notch--active .notch-activity-right {
-  animation: notch-element-spring 0.42s cubic-bezier(0.34, 1.56, 0.64, 1) 0.06s both;
+.dynamic-notch--compact .notch-compact-left,
+.dynamic-notch--compact .notch-compact-right {
+  opacity: 1;
+  transform: none;
+  animation: none !important;
 }
 
 /* Staggered spring bounce on active split notch */
@@ -4676,8 +4676,7 @@
 
 .dynamic-notch-wrapper--island {
   top: 14px !important;
-  transition: top var(--glace-duration-base) var(--glace-ease-spring),
-              opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
               transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
 
@@ -4827,6 +4826,567 @@
 .dynamic-notch-wrapper--island .dynamic-notch--activity:active,
 .dynamic-notch-wrapper--island .dynamic-notch--bluetooth-compact:active {
   transform: scale(0.975) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   NOTCH <-> DYNAMIC ISLAND MORPH TRANSITION CHOREOGRAPHY
+   1. Notch -> Island:
+      - Left/right inverted curve ears fade to transparent and scale down.
+      - Notch shrinks horizontally and rounds into an exact 35px circle at top: 0.
+      - 35px circle smoothly floats down from top: 0 (translateY 0) to translateY 14px.
+      - Circle expands horizontally with fluid spring physics into 35px island capsule.
+      - Internal content fades out during circle phase and springs in upon expansion.
+   2. Island -> Notch (Reverse):
+      - Island pill contracts width into a 35px circle at translateY 14px.
+      - 35px circle floats up from translateY 14px to top: 0 (attaches to top bezel).
+      - Top corners flatten to 0, width expands with spring physics into notch rectangle.
+      - Left/right inverted curve ears expand outward in sync with corners (zero delay).
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.dynamic-notch-wrapper--morph-to-island,
+.dynamic-notch-wrapper--morph-to-notch {
+  top: 0 !important;
+  pointer-events: none !important;
+  transition: none !important;
+}
+
+.dynamic-notch-wrapper--morph-to-island .dynamic-notch,
+.dynamic-notch-wrapper--morph-to-notch .dynamic-notch,
+.dynamic-notch-wrapper--morph-to-island .notch-ear,
+.dynamic-notch-wrapper--morph-to-notch .notch-ear {
+  transition: none !important;
+}
+
+/* Light border comet fades smoothly during morph without abrupt pop */
+.dynamic-notch-wrapper--morph-to-island .notch-light-border,
+.dynamic-notch-wrapper--morph-to-notch .notch-light-border {
+  animation: morphBorderFade 850ms ease forwards;
+}
+
+@keyframes morphBorderFade {
+  0% {
+    opacity: 0.8;
+  }
+  15%, 55% {
+    opacity: 0;
+  }
+  80% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* ── 1. NOTCH -> ISLAND ─────────────────────────────────────────────────── */
+
+.dynamic-notch-wrapper--morph-to-island {
+  animation: morphWrapperNotchToIsland 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes morphWrapperNotchToIsland {
+  0%, 28% {
+    transform: translateX(-50%) translateY(0);
+  }
+  52%, 100% {
+    transform: translateX(-50%) translateY(14px);
+  }
+}
+
+.dynamic-notch-wrapper--morph-to-island .dynamic-notch {
+  overflow: visible !important;
+  box-shadow: none !important;
+}
+
+.dynamic-notch-wrapper--morph-to-island .notch-activity-layout,
+.dynamic-notch-wrapper--morph-to-island .notch-compact-layout {
+  overflow: hidden !important;
+  border-radius: inherit !important;
+}
+
+/* Media Activity Variant: Expands to authentic 205px-255px with 7px padding */
+.dynamic-notch-wrapper--morph-to-island .dynamic-notch--activity {
+  animation: morphNotchToIslandActivity 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes morphNotchToIslandActivity {
+  0% {
+    width: auto;
+    min-width: 150px;
+    max-width: 185px;
+    height: 26px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    padding: 0 9px;
+  }
+  14% {
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+    padding: 0 4px;
+  }
+  28% {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    padding: 0;
+  }
+  52% {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    padding: 0;
+  }
+  72% {
+    width: 255px;
+    min-width: 245px;
+    max-width: 265px;
+    height: 35px;
+    border-radius: 18px;
+    padding: 0 12px 0 7px;
+  }
+  86% {
+    width: 220px;
+    min-width: 205px;
+    max-width: 255px;
+    height: 35px;
+    border-radius: 18px;
+    padding: 0 12px 0 7px;
+  }
+  100% {
+    width: auto;
+    min-width: 205px;
+    max-width: 255px;
+    height: 35px;
+    border-radius: 18px;
+    padding: 0 12px 0 7px;
+  }
+}
+
+/* Idle Compact Variant: Expands to authentic 175px-215px with 14px padding */
+.dynamic-notch-wrapper--morph-to-island .dynamic-notch--compact {
+  animation: morphNotchToIslandCompact 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes morphNotchToIslandCompact {
+  0% {
+    width: auto;
+    min-width: 148px;
+    max-width: 180px;
+    height: 26px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    padding: 0 12px;
+  }
+  14% {
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    border-bottom-left-radius: 16px;
+    border-bottom-right-radius: 16px;
+    padding: 0 4px;
+  }
+  28% {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    padding: 0;
+  }
+  52% {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    padding: 0;
+  }
+  72% {
+    width: 225px;
+    min-width: 215px;
+    max-width: 235px;
+    height: 35px;
+    border-radius: 18px;
+    padding: 0 14px;
+  }
+  86% {
+    width: 190px;
+    min-width: 180px;
+    max-width: 215px;
+    height: 35px;
+    border-radius: 18px;
+    padding: 0 14px;
+  }
+  100% {
+    width: auto;
+    min-width: 175px;
+    max-width: 215px;
+    height: 35px;
+    border-radius: 18px;
+    padding: 0 14px;
+  }
+}
+
+/* Ears fade out into transparency immediately */
+.dynamic-notch-wrapper--morph-to-island .notch-ear {
+  animation: morphEarsFadeOut 850ms ease forwards !important;
+}
+
+@keyframes morphEarsFadeOut {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  14%, 100% {
+    opacity: 0;
+    transform: scale(0.2);
+    pointer-events: none;
+  }
+}
+
+/* Content smooth swap */
+.dynamic-notch-wrapper--morph-to-island .notch-compact-layout,
+.dynamic-notch-wrapper--morph-to-island .notch-activity-layout,
+.dynamic-notch-wrapper--morph-to-island .notch-split-container {
+  animation: morphContentNotchToIsland 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes morphContentNotchToIsland {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  12% {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+  52% {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+  74% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Album thumbnail: squircle 15px to circle 23px */
+.dynamic-notch-wrapper--morph-to-island .notch-album-thumb {
+  animation: morphThumbSquircleToCircle 850ms ease forwards !important;
+}
+
+.dynamic-notch-wrapper--morph-to-island .notch-album-thumb img {
+  border-radius: inherit !important;
+}
+
+@keyframes morphThumbSquircleToCircle {
+  0% {
+    width: 15px;
+    height: 15px;
+    border-radius: 3.5px;
+  }
+  18% {
+    width: 15px;
+    height: 15px;
+    border-radius: 3.5px;
+  }
+  60% {
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+  }
+  100% {
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+  }
+}
+
+/* Title typography smoothly settles at island size */
+.dynamic-notch-wrapper--morph-to-island .notch-activity-title {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+/* ── 2. ISLAND -> NOTCH (REVERSE) ───────────────────────────────────────── */
+
+.dynamic-notch-wrapper--morph-to-notch {
+  animation: morphWrapperIslandToNotch 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes morphWrapperIslandToNotch {
+  0%, 28% {
+    transform: translateX(-50%) translateY(14px);
+  }
+  52%, 100% {
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.dynamic-notch-wrapper--morph-to-notch .dynamic-notch {
+  overflow: visible !important;
+  box-shadow: none !important;
+}
+
+.dynamic-notch-wrapper--morph-to-notch .notch-activity-layout,
+.dynamic-notch-wrapper--morph-to-notch .notch-compact-layout {
+  overflow: hidden !important;
+  border-radius: inherit !important;
+}
+
+/* Media Activity Variant: Contracts from 205-255px to 150-185px */
+.dynamic-notch-wrapper--morph-to-notch .dynamic-notch--activity {
+  animation: morphIslandToNotchActivity 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes morphIslandToNotchActivity {
+  0% {
+    width: auto;
+    min-width: 205px;
+    max-width: 255px;
+    height: 35px;
+    border-radius: 18px;
+    padding: 0 12px 0 7px;
+  }
+  28% {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    padding: 0;
+  }
+  52% {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    padding: 0;
+  }
+  56% {
+    height: 26px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    padding: 0;
+  }
+  70% {
+    width: 190px;
+    min-width: 185px;
+    max-width: 190px;
+    height: 26px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    padding: 0 9px;
+  }
+  86% {
+    width: 170px;
+    min-width: 160px;
+    max-width: 185px;
+    height: 26px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    padding: 0 9px;
+  }
+  100% {
+    width: auto;
+    min-width: 150px;
+    max-width: 185px;
+    height: 26px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    padding: 0 9px;
+  }
+}
+
+/* Idle Compact Variant: Contracts from 175-215px to 148-180px */
+.dynamic-notch-wrapper--morph-to-notch .dynamic-notch--compact {
+  animation: morphIslandToNotchCompact 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes morphIslandToNotchCompact {
+  0% {
+    width: auto;
+    min-width: 175px;
+    max-width: 215px;
+    height: 35px;
+    border-radius: 18px;
+    padding: 0 14px;
+  }
+  28% {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    padding: 0;
+  }
+  52% {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    padding: 0;
+  }
+  56% {
+    height: 26px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    padding: 0;
+  }
+  70% {
+    width: 185px;
+    min-width: 180px;
+    max-width: 185px;
+    height: 26px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    padding: 0 12px;
+  }
+  86% {
+    width: 165px;
+    min-width: 155px;
+    max-width: 175px;
+    height: 26px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    padding: 0 12px;
+  }
+  100% {
+    width: auto;
+    min-width: 148px;
+    max-width: 180px;
+    height: 26px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    padding: 0 12px;
+  }
+}
+
+/* Notch ears fade in with expansion as circle touches top bezel */
+.dynamic-notch-wrapper--morph-to-notch .notch-ear {
+  display: block !important;
+  opacity: 0;
+  pointer-events: none;
+  animation: morphEarsFadeIn 850ms ease forwards !important;
+}
+
+.dynamic-notch-wrapper--morph-to-notch .notch-ear--left {
+  transform-origin: right top;
+}
+
+.dynamic-notch-wrapper--morph-to-notch .notch-ear--right {
+  transform-origin: left top;
+}
+
+@keyframes morphEarsFadeIn {
+  0%, 50% {
+    opacity: 0;
+    transform: scale(0.3);
+    pointer-events: none;
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: none;
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: none;
+  }
+}
+
+/* Content smooth swap reverse */
+.dynamic-notch-wrapper--morph-to-notch .notch-compact-layout,
+.dynamic-notch-wrapper--morph-to-notch .notch-activity-layout,
+.dynamic-notch-wrapper--morph-to-notch .notch-split-container {
+  animation: morphContentIslandToNotch 850ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes morphContentIslandToNotch {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  12% {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+  52% {
+    opacity: 0;
+    transform: scale(0.65);
+  }
+  74% {
+    opacity: 0.9;
+    transform: scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Album thumbnail: circle 23px to squircle 15px */
+.dynamic-notch-wrapper--morph-to-notch .notch-album-thumb {
+  animation: morphThumbCircleToSquircle 850ms ease forwards !important;
+}
+
+.dynamic-notch-wrapper--morph-to-notch .notch-album-thumb img {
+  border-radius: inherit !important;
+}
+
+@keyframes morphThumbCircleToSquircle {
+  0% {
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+  }
+  20% {
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+  }
+  55% {
+    width: 15px;
+    height: 15px;
+    border-radius: 3.5px;
+  }
+  100% {
+    width: 15px;
+    height: 15px;
+    border-radius: 3.5px;
+  }
 }
 
 

@@ -36,15 +36,50 @@ export const DynamicNotch: React.FC = () => {
     }
   });
 
+  const [morphAnimation, setMorphAnimation] = useState<"to-island" | "to-notch" | null>(null);
+  const morphTimeoutRef = useRef<number | null>(null);
+  const activeTargetRef = useRef<"notch" | "island">(displayStyle);
+
+  const transitionToStyle = useCallback((targetStyle: "notch" | "island") => {
+    // Prevent duplicate rapid-fire events from restarting mid-flight animation
+    if (activeTargetRef.current === targetStyle) {
+      return;
+    }
+
+    activeTargetRef.current = targetStyle;
+
+    if (morphTimeoutRef.current) {
+      window.clearTimeout(morphTimeoutRef.current);
+      morphTimeoutRef.current = null;
+    }
+
+    setMorphAnimation(targetStyle === "island" ? "to-island" : "to-notch");
+
+    morphTimeoutRef.current = window.setTimeout(() => {
+      setDisplayStyle(targetStyle);
+      setMorphAnimation(null);
+      morphTimeoutRef.current = null;
+    }, 850);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (morphTimeoutRef.current) {
+        window.clearTimeout(morphTimeoutRef.current);
+      }
+    };
+  }, []);
+
   useEffect(() => {
     const handleStorage = (e: StorageEvent) => {
       if (e.key === "notch_display_style") {
-        setDisplayStyle(e.newValue === "notch" ? "notch" : "island");
+        const next = e.newValue === "notch" ? "notch" : "island";
+        transitionToStyle(next);
       }
     };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
-  }, []);
+  }, [transitionToStyle]);
 
   const systemMetrics = useSystemMetrics(true);
   const batteryPercent = systemMetrics?.battery_percent ?? 100;
@@ -190,7 +225,7 @@ export const DynamicNotch: React.FC = () => {
       if (key === "expandOnHover") setExpandOnHover(Boolean(value));
       if (key === "peekKey") setPeekKey(value);
       if (key === "mediaBgMode") setMediaBgMode(value);
-      if (key === "displayStyle") setDisplayStyle(value === "island" ? "island" : "notch");
+      if (key === "displayStyle") transitionToStyle(value === "notch" ? "notch" : "island");
     }).then((un) => {
       unlistenSettings = un;
     });
@@ -642,7 +677,17 @@ export const DynamicNotch: React.FC = () => {
       )}
 
       <div
-        className={`dynamic-notch-wrapper ${displayStyle === "island" ? "dynamic-notch-wrapper--island" : ""} ${isPeekActive ? "dynamic-notch-wrapper--peek-through" : ""} ${isNotchHovered ? "dynamic-notch-wrapper--hovered" : ""}`}
+        className={`dynamic-notch-wrapper ${
+          morphAnimation === "to-island"
+            ? "dynamic-notch-wrapper--morph-to-island"
+            : morphAnimation === "to-notch"
+            ? "dynamic-notch-wrapper--morph-to-notch"
+            : displayStyle === "island"
+            ? "dynamic-notch-wrapper--island"
+            : ""
+        } ${isPeekActive ? "dynamic-notch-wrapper--peek-through" : ""} ${
+          isNotchHovered ? "dynamic-notch-wrapper--hovered" : ""
+        }`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onWheel={handleWheel}
