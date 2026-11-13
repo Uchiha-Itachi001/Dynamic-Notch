@@ -172,6 +172,10 @@ export const DynamicNotch: React.FC = () => {
 
   const activeTitle = liveMedia?.title?.trim() || (hasLiveMedia ? "Connecting Audio..." : "No Media Playing");
   const activeArtist = liveMedia?.artist?.trim() || (hasLiveMedia ? "Resolving Stream..." : "Ready to play");
+  const boundedCurrentSec = activeDuration > 0
+    ? Math.min(activeDuration, Math.max(0, activeCurrentSec || 0))
+    : Math.max(0, activeCurrentSec || 0);
+  const boundedProgress = Math.min(100, Math.max(0, progressPercent || 0));
 
   // ── Expand/Collapse handlers ──────────────────────────────────────────────
   const handleExpandMedia = (e?: React.MouseEvent) => {
@@ -546,7 +550,13 @@ export const DynamicNotch: React.FC = () => {
     if (!showCover) return null;
     return (
       <div className="notch-bg-cover notch-bg-cover--media" aria-hidden="true">
-        <img src={liveMedia?.album_art_base64} alt="" className="notch-media-thumbnail-bg" draggable={false} />
+        <img
+          key={liveMedia?.album_art_base64 || activeTitle}
+          src={liveMedia?.album_art_base64}
+          alt=""
+          className="notch-media-thumbnail-bg notch-track-bg-fade"
+          draggable={false}
+        />
         <div className="notch-media-thumbnail-overlay" />
       </div>
     );
@@ -647,12 +657,17 @@ export const DynamicNotch: React.FC = () => {
               <div className="notch-card-top-row">
                 <div className="notch-card-media-left">
                   <div className="notch-card-art">
-                    <img src={liveMedia?.album_art_base64 || "/albumcover-placeholder.png"} alt="Album Art"
-                      onError={(e) => { (e.target as HTMLImageElement).src = "/albumcover-placeholder.png"; }} />
+                    <img
+                      key={liveMedia?.album_art_base64 || activeTitle}
+                      src={liveMedia?.album_art_base64 || "/albumcover-placeholder.png"}
+                      alt="Album Art"
+                      className="notch-track-art-fade"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/albumcover-placeholder.png"; }}
+                    />
                   </div>
                   <div className="notch-card-text">
-                    <span className="notch-card-title">{activeTitle}</span>
-                    <span className="notch-card-artist">{activeArtist}</span>
+                    <span key={activeTitle} className="notch-card-title notch-track-text-fade">{activeTitle}</span>
+                    <span key={activeArtist} className="notch-card-artist notch-track-text-fade">{activeArtist}</span>
                   </div>
                 </div>
                 <div className="notch-card-wave-right">
@@ -663,10 +678,10 @@ export const DynamicNotch: React.FC = () => {
                 </div>
               </div>
               <div className="notch-card-scrubber-row">
-                <span className="notch-time-label">{formatTime(activeCurrentSec)}</span>
+                <span className="notch-time-label">{formatTime(boundedCurrentSec)}</span>
                 <div className="notch-scrubber-track" onClick={handleScrubberClick}>
-                  <div className="notch-scrubber-fill" style={{ width: `${progressPercent}%` }} />
-                  <div className="notch-scrubber-thumb" style={{ left: `${progressPercent}%` }} />
+                  <div className="notch-scrubber-fill" style={{ width: `${boundedProgress}%` }} />
+                  <div className="notch-scrubber-thumb" style={{ left: `${boundedProgress}%` }} />
                 </div>
                 <span className="notch-time-label">{formatTime(activeDuration)}</span>
               </div>
@@ -1082,8 +1097,13 @@ export const DynamicNotch: React.FC = () => {
               {splitViewMode === "media_main" ? (
                 <div className="notch-split-media-layout" aria-label={activeTitle}>
                   <div className="notch-album-thumb">
-                    <img src={liveMedia?.album_art_base64 || "/albumcover-placeholder.png"} alt="Album Art"
-                      onError={(e) => { (e.target as HTMLImageElement).src = "/albumcover-placeholder.png"; }} />
+                    <img
+                      key={liveMedia?.album_art_base64 || activeTitle}
+                      src={liveMedia?.album_art_base64 || "/albumcover-placeholder.png"}
+                      alt="Album Art"
+                      className="notch-track-art-fade"
+                      onError={(e) => { (e.target as HTMLImageElement).src = "/albumcover-placeholder.png"; }}
+                    />
                   </div>
                   {volumeFeedbackVisible ? (
                     <div className="notch-split-inline-volume">
@@ -1095,7 +1115,7 @@ export const DynamicNotch: React.FC = () => {
                     </div>
                   ) : (
                     <>
-                      <span className="notch-split-media-name">{activeTitle}</span>
+                      <span key={activeTitle} className="notch-split-media-name notch-track-text-fade">{activeTitle}</span>
                       <div className={`notch-equalizer-wave ${!activeIsPlaying ? "notch-equalizer-wave--paused" : ""}`}>
                         <span className="notch-wave-bar" /><span className="notch-wave-bar" /><span className="notch-wave-bar" /><span className="notch-wave-bar" />
                       </div>
@@ -1152,8 +1172,13 @@ export const DynamicNotch: React.FC = () => {
                 </div>
               ) : (
                 <div className="notch-album-thumb notch-album-thumb--mini">
-                  <img src={liveMedia?.album_art_base64 || "/albumcover-placeholder.png"} alt="Album Art"
-                    onError={(e) => { (e.target as HTMLImageElement).src = "/albumcover-placeholder.png"; }} />
+                  <img
+                    key={liveMedia?.album_art_base64 || activeTitle}
+                    src={liveMedia?.album_art_base64 || "/albumcover-placeholder.png"}
+                    alt="Album Art"
+                    className="notch-track-art-fade"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "/albumcover-placeholder.png"; }}
+                  />
                 </div>
               )}
             </div>
@@ -1231,13 +1256,18 @@ export const DynamicNotch: React.FC = () => {
             <div className="notch-activity-layout">
               <div className="notch-activity-left">
                 <div className="notch-album-thumb">
-                  <img src={liveMedia?.album_art_base64 || "/albumcover-placeholder.png"} alt="Album Art"
-                    onError={(e) => { (e.target as HTMLImageElement).src = "/albumcover-placeholder.png"; }} />
+                  <img
+                    key={liveMedia?.album_art_base64 || activeTitle}
+                    src={liveMedia?.album_art_base64 || "/albumcover-placeholder.png"}
+                    alt="Album Art"
+                    className="notch-track-art-fade"
+                    onError={(e) => { (e.target as HTMLImageElement).src = "/albumcover-placeholder.png"; }}
+                  />
                 </div>
               </div>
               <div className="notch-activity-middle">
                 <div className={`notch-swap-layer notch-swap-layer--title ${volumeFeedbackVisible ? "notch-swap-layer--hidden" : "notch-swap-layer--active"}`}>
-                  <span className="notch-activity-title">{activeTitle}</span>
+                  <span key={activeTitle} className="notch-activity-title notch-track-text-fade">{activeTitle}</span>
                 </div>
                 <div className={`notch-swap-layer notch-swap-layer--volume ${volumeFeedbackVisible ? "notch-swap-layer--active" : "notch-swap-layer--hidden"}`}>
                   <div className="notch-inline-volume">

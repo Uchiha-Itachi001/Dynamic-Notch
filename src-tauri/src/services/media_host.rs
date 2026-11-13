@@ -53,6 +53,7 @@ struct MediaCache {
     active_session: Option<GlobalSystemMediaTransportControlsSession>,
     active_app_id: String,
     active_title: String,
+    last_active_time: Option<Instant>,
 }
 
 static MEDIA_CACHE: Mutex<MediaCache> = Mutex::new(MediaCache {
@@ -62,6 +63,7 @@ static MEDIA_CACHE: Mutex<MediaCache> = Mutex::new(MediaCache {
     active_session: None,
     active_app_id: String::new(),
     active_title: String::new(),
+    last_active_time: None,
 });
 
 struct SendThumb(windows::Storage::Streams::IRandomAccessStreamReference);
@@ -861,6 +863,10 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
                     }
                 }
 
+                if duration_sec > 0 && current_sec > duration_sec {
+                    current_sec = duration_sec;
+                }
+
                 // Asynchronous, non-blocking thumbnail extraction on background thread without stalling UI
                 let mut album_art_base64: Option<String> = None;
                 let mut needs_spawn = false;
@@ -992,7 +998,7 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
     // 3. Priority Arbitration between WinRT GSMTC and Win32 Media Players
     let win32_media = scan_win32_media_players();
 
-    let final_session = match (session_info, win32_media) {
+    let mut final_session = match (session_info, win32_media) {
         (Some(gsmtc), Some(w32)) => {
             if gsmtc.is_playing && !gsmtc.title.is_empty() {
                 Some(gsmtc)
@@ -1014,8 +1020,28 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
         (None, None) => None,
     };
 
-    // When no media player is active/running, wipe stale caches so dead media is never resurrected
+    // Track Transition Grace Period:
+    // If GSMTC briefly dropped during a track switch (e.g. Next Song buffering for 0.5 - 2.5s),
+    // hold the last valid track in standby so the session doesn't abruptly drop to clock/battery.
+    if let Some(ref s) = final_session {
+        if !s.title.is_empty() {
+            cache.last_active_time = Some(now);
+        }
+    } else if let Some(last_active) = cache.last_active_time {
+        if now.duration_since(last_active) < Duration::from_millis(2500) {
+            if let Ok(guard) = LAST_VALID_TRACK.lock() {
+                if let Some(ref last) = *guard {
+                    let mut standby = last.clone();
+                    standby.is_playing = false;
+                    final_session = Some(standby);
+                }
+            }
+        }
+    }
+
+    // When no media player is active/running past grace period, wipe stale caches
     if final_session.is_none() {
+        cache.last_active_time = None;
         if let Ok(mut guard) = LAST_VALID_TRACK.lock() {
             *guard = None;
         }

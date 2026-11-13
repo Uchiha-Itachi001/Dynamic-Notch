@@ -33,6 +33,9 @@ let anchorPositionSec = 0;
 let anchorTimestamp = performance.now();
 let optimisticPlayState: { target: boolean; expiresAt: number } | null = null;
 
+let disconnectGraceTimer: number | null = null;
+const DISCONNECT_GRACE_MS = 3200;
+
 let lastKnownTrack: MediaSessionInfo | null = null;
 let lastKnownArt: string | undefined = undefined;
 let activeArtFetchKey = "";
@@ -106,7 +109,7 @@ function updatePlaybackTicker() {
         const duration = currentState.durationSec;
         const elapsed = (performance.now() - anchorTimestamp) / 1000;
         const exactSec = Math.min(duration, Math.max(0, anchorPositionSec + elapsed));
-        const pct = duration > 0 ? (exactSec / duration) * 100 : 0;
+        const pct = duration > 0 ? Math.min(100, Math.max(0, (exactSec / duration) * 100)) : 0;
 
         currentState = {
           ...currentState,
@@ -126,6 +129,11 @@ function updatePlaybackTicker() {
 
 function processIncomingSession(session: MediaSessionInfo | null) {
   if (session && (session.title?.trim() || session.artist?.trim() || session.is_playing)) {
+    if (disconnectGraceTimer !== null) {
+      window.clearTimeout(disconnectGraceTimer);
+      disconnectGraceTimer = null;
+    }
+
     let title = session.title?.trim() || "";
     let artist = session.artist?.trim() || "";
     let art: string | undefined = session.album_art_base64 || undefined;
@@ -138,8 +146,15 @@ function processIncomingSession(session: MediaSessionInfo | null) {
       }
     }
 
-    // If incoming art is missing (e.g. stream dropped on pause), restore last known art
-    if (!art && lastKnownTrack && (lastKnownTrack.title === title || isGenericTitle(session.title))) {
+    const isSameTrack = Boolean(
+      lastKnownTrack &&
+      !isGenericTitle(title) &&
+      !isGenericTitle(lastKnownTrack.title) &&
+      lastKnownTrack.title.trim().toLowerCase() === title.trim().toLowerCase()
+    );
+
+    // If incoming art is missing (e.g. stream dropped on pause), restore last known art only for same track
+    if (!art && lastKnownTrack && (isSameTrack || isGenericTitle(session.title))) {
       art = lastKnownTrack.album_art_base64 || lastKnownArt;
     }
 
@@ -158,9 +173,34 @@ function processIncomingSession(session: MediaSessionInfo | null) {
       triggerBackgroundArtFetch(title, artist);
     }
 
-    const duration = session.duration_sec || (session.duration_ms ? Math.floor(session.duration_ms / 1000) : 0) || (lastKnownTrack?.duration_sec ?? 0);
-    const currentSec = session.current_sec || (session.position_ms ? Math.floor(session.position_ms / 1000) : 0) || (lastKnownTrack?.current_sec ?? 0);
-    const progressPercent = duration > 0 ? (currentSec / duration) * 100 : 0;
+    let duration = 0;
+    if (typeof session.duration_sec === "number" && session.duration_sec > 0) {
+      duration = session.duration_sec;
+    } else if (typeof session.duration_ms === "number" && session.duration_ms > 0) {
+      duration = Math.floor(session.duration_ms / 1000);
+    } else if (isSameTrack && lastKnownTrack && (lastKnownTrack.duration_sec ?? 0) > 0) {
+      duration = lastKnownTrack.duration_sec ?? 0;
+    }
+
+    let currentSec = 0;
+    if (typeof session.current_sec === "number") {
+      currentSec = session.current_sec;
+    } else if (typeof session.position_ms === "number") {
+      currentSec = Math.floor(session.position_ms / 1000);
+    } else if (isSameTrack && lastKnownTrack && typeof lastKnownTrack.current_sec === "number") {
+      currentSec = lastKnownTrack.current_sec;
+    }
+
+    // Strictly clamp currentSec to [0, duration]
+    if (duration > 0) {
+      currentSec = Math.min(duration, Math.max(0, currentSec));
+    } else {
+      currentSec = Math.max(0, currentSec);
+    }
+
+    const progressPercent = duration > 0
+      ? Math.min(100, Math.max(0, (currentSec / duration) * 100))
+      : 0;
 
     const mergedSession: MediaSessionInfo = {
       ...session,
@@ -184,8 +224,10 @@ function processIncomingSession(session: MediaSessionInfo | null) {
       }
     }
 
-    anchorPositionSec = currentSec;
-    anchorTimestamp = performance.now();
+    if (!isSameTrack || !isPlaying || Math.abs(currentSec - anchorPositionSec) > 2) {
+      anchorPositionSec = currentSec;
+      anchorTimestamp = performance.now();
+    }
 
     const theme = albumArtService.getColorTheme(title, artist, art || undefined);
 
@@ -217,17 +259,28 @@ function processIncomingSession(session: MediaSessionInfo | null) {
     return;
   }
 
-  // Incoming session is null, closed, or has no track details: wipe caches and reset immediately
+  // Incoming session is null, closed, or has no track details.
+  // Hold current media state in grace period (3.2s) so next track buffering never drops to clock/battery!
+  if (currentState.hasLiveMedia) {
+    if (disconnectGraceTimer === null) {
+      disconnectGraceTimer = window.setTimeout(() => {
+        disconnectGraceTimer = null;
+        lastKnownTrack = null;
+        lastKnownArt = undefined;
+        if (currentState.hasLiveMedia) {
+          anchorPositionSec = 0;
+          anchorTimestamp = performance.now();
+          currentState = DEFAULT_STATE;
+          notifyListeners();
+          updatePlaybackTicker();
+        }
+      }, DISCONNECT_GRACE_MS);
+    }
+    return;
+  }
+
   lastKnownTrack = null;
   lastKnownArt = undefined;
-
-  if (currentState.hasLiveMedia) {
-    anchorPositionSec = 0;
-    anchorTimestamp = performance.now();
-    currentState = DEFAULT_STATE;
-    notifyListeners();
-    updatePlaybackTicker();
-  }
 }
 
 async function fetchAndUpdate() {
@@ -348,7 +401,7 @@ export function useMediaSession(enabled: boolean = true) {
   const seekTrack = useCallback((sec: number) => {
     const duration = currentState.durationSec;
     const boundedSec = duration > 0 ? Math.max(0, Math.min(duration, sec)) : Math.max(0, sec);
-    const pct = duration > 0 ? (boundedSec / duration) * 100 : 0;
+    const pct = duration > 0 ? Math.min(100, Math.max(0, (boundedSec / duration) * 100)) : 0;
     anchorPositionSec = boundedSec;
     anchorTimestamp = performance.now();
     currentState = {
