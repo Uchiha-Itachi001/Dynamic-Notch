@@ -16,6 +16,7 @@ import {
   ExternalLink,
   Check,
   Shield,
+  Layers,
 } from "lucide-react";
 import { tauriBridge } from "../services/tauriBridge";
 import { useSystemMetrics } from "../hooks/useSystemMetrics";
@@ -60,6 +61,16 @@ export function SettingsWindow() {
     }
   });
 
+  // State: Display style (The Notch vs Dynamic Island)
+  const [displayStyle, setDisplayStyle] = useState<"notch" | "island">(() => {
+    try {
+      const saved = localStorage.getItem("notch_display_style");
+      return saved === "notch" ? "notch" : "island";
+    } catch {
+      return "island";
+    }
+  });
+
   // Live telemetry for previewing hardware status
   const systemMetrics = useSystemMetrics(activeTab === "hardware");
 
@@ -84,6 +95,7 @@ export function SettingsWindow() {
     const nextVal = !expandOnHover;
     setExpandOnHover(nextVal);
     localStorage.setItem("notch_expand_on_hover", JSON.stringify(nextVal));
+    await tauriBridge.broadcastSettingChange("expandOnHover", nextVal);
     await emit("notch-settings-updated", { key: "expandOnHover", value: nextVal });
   };
 
@@ -91,13 +103,22 @@ export function SettingsWindow() {
     setPeekKey(key);
     localStorage.setItem("notch_peek_key", key);
     await tauriBridge.setNotchHoverActive(false, key);
+    await tauriBridge.broadcastSettingChange("peekKey", key);
     await emit("notch-settings-updated", { key: "peekKey", value: key });
   };
 
   const handleChangeMediaBgMode = async (mode: "cover" | "tint" | "plain") => {
     setMediaBgMode(mode);
     localStorage.setItem("notch_media_background", mode);
+    await tauriBridge.broadcastSettingChange("mediaBgMode", mode);
     await emit("notch-settings-updated", { key: "mediaBgMode", value: mode });
+  };
+
+  const handleChangeDisplayStyle = async (style: "notch" | "island") => {
+    setDisplayStyle(style);
+    localStorage.setItem("notch_display_style", style);
+    await tauriBridge.broadcastSettingChange("displayStyle", style);
+    await emit("notch-settings-updated", { key: "displayStyle", value: style });
   };
 
   return (
@@ -192,6 +213,38 @@ export function SettingsWindow() {
             </div>
 
             <div className="settings-card-group">
+              <div className="settings-card">
+                <div className="settings-row">
+                  <div className="settings-row-left">
+                    <div className="settings-icon-squircle gradient-purple">
+                      <Layers size={16} strokeWidth={2.4} />
+                    </div>
+                    <div className="settings-row-info">
+                      <span className="settings-row-title">Form Factor / Display Style</span>
+                      <span className="settings-row-desc">Switch between attached MacBook-style top bezel and floating iPhone Pro Dynamic Island.</span>
+                    </div>
+                  </div>
+                  <div className="settings-row-right">
+                    <div className="settings-segmented">
+                      <button
+                        className={`settings-segmented-btn ${displayStyle === "notch" ? "settings-segmented-btn--active" : ""}`}
+                        onClick={() => handleChangeDisplayStyle("notch")}
+                        type="button"
+                      >
+                        The Notch
+                      </button>
+                      <button
+                        className={`settings-segmented-btn ${displayStyle === "island" ? "settings-segmented-btn--active" : ""}`}
+                        onClick={() => handleChangeDisplayStyle("island")}
+                        type="button"
+                      >
+                        Dynamic Island
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div className="settings-card">
                 <div className="settings-row">
                   <div className="settings-row-left">

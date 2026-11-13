@@ -225,6 +225,14 @@ export const tauriBridge = {
     }
   },
 
+  broadcastSettingChange: async (key: string, value: any): Promise<void> => {
+    try {
+      await invoke("broadcast_setting_change", { key, value });
+    } catch (e) {
+      console.error("broadcastSettingChange error:", e);
+    }
+  },
+
   // System event listeners (Rust → Frontend)
   onVolumeChanged: (callback: (payload: { volume_pct: number; muted: boolean }) => void): Promise<UnlistenFn> => {
     return listen<{ volume_pct: number; muted: boolean }>("volume-changed", (event) => {

@@ -51,6 +51,7 @@ pub fn run() {
             commands::window::power_action,
             commands::window::exit_app,
             commands::window::open_settings_window,
+            commands::window::broadcast_setting_change,
         ])
         .on_window_event(|window, event| {
             if window.label() == "settings" {

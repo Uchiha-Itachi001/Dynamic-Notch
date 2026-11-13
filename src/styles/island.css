@@ -4664,6 +4664,172 @@
   display: flex;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   DYNAMIC ISLAND MODE (Detached Floating Pill / Squircle)
+   When .dynamic-notch-wrapper--island is applied:
+   1. Detached: floats 9px below screen top edge.
+   2. Zero ears: hides inverted corner fillets.
+   3. Pill / Squircle curvature: 999px in resting/OSD/split, 38px in expanded cards.
+   4. Floating depth: soft ambient drop shadow + 360-degree hairline perimeter.
+   5. Full-perimeter light border: wraps 360 degrees around all 4 edges.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+.dynamic-notch-wrapper--island {
+  top: 14px !important;
+  transition: top var(--glace-duration-base) var(--glace-ease-spring),
+              opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* Hide all inverted top ears in Dynamic Island mode */
+.dynamic-notch-wrapper--island .notch-ear {
+  display: none !important;
+}
+
+/* 360-degree border radius and zero shadow */
+.dynamic-notch-wrapper--island .dynamic-notch {
+  border-top-left-radius: 18px !important;
+  border-top-right-radius: 18px !important;
+  border-bottom-left-radius: 18px !important;
+  border-bottom-right-radius: 18px !important;
+  border-radius: 18px !important;
+  background: #000000 !important;
+  box-shadow: none !important;
+}
+
+/* Plump authentic 35px height for compact idle and media states */
+.dynamic-notch-wrapper--island .dynamic-notch--compact,
+.dynamic-notch-wrapper--island .dynamic-notch--activity,
+.dynamic-notch-wrapper--island .dynamic-notch--osd {
+  height: 35px !important;
+  min-height: 35px !important;
+  border-radius: 18px !important;
+  padding: 0 14px !important;
+}
+
+.dynamic-notch-wrapper--island .dynamic-notch--compact {
+  min-width: 175px !important;
+  max-width: 215px !important;
+}
+
+.dynamic-notch-wrapper--island .dynamic-notch--activity {
+  min-width: 205px !important;
+  max-width: 255px !important;
+  padding: 0 12px 0 7px !important;
+}
+
+.dynamic-notch-wrapper--island .notch-split-main--media {
+  padding: 0 10px 0 7px !important;
+}
+
+.dynamic-notch-wrapper--island .notch-album-thumb {
+  width: 23px !important;
+  height: 23px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+}
+
+.dynamic-notch-wrapper--island .notch-album-thumb img {
+  border-radius: 50% !important;
+}
+
+.dynamic-notch-wrapper--island .notch-split-main--media .notch-album-thumb {
+  width: 21px !important;
+  height: 21px !important;
+  border-radius: 50% !important;
+  overflow: hidden !important;
+}
+
+.dynamic-notch-wrapper--island .notch-split-main--media .notch-album-thumb img {
+  border-radius: 50% !important;
+}
+
+.dynamic-notch-wrapper--island .notch-activity-title {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+
+/* Expanded card radius with zero shadow */
+.dynamic-notch-wrapper--island .dynamic-notch--expanded,
+.dynamic-notch-wrapper--island .dynamic-notch--ios-active,
+.dynamic-notch-wrapper--island .dynamic-notch--calendar,
+.dynamic-notch-wrapper--island .dynamic-notch--bluetooth-expanded,
+.dynamic-notch-wrapper--island .dynamic-notch--hardware-expanded {
+  border-radius: 22px !important;
+  box-shadow: none !important;
+}
+
+/* Multi-activity and dual-split floating detached pills */
+.dynamic-notch-wrapper--island .notch-split-container {
+  gap: 10px !important;
+}
+
+.dynamic-notch-wrapper--island .notch-split-main {
+  height: 35px !important;
+  min-height: 35px !important;
+  padding: 0 14px !important;
+  border-radius: 18px !important;
+  box-shadow: none !important;
+}
+
+.dynamic-notch-wrapper--island .notch-split-secondary {
+  width: 35px !important;
+  min-width: 35px !important;
+  height: 35px !important;
+  border-radius: 50% !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: none !important;
+}
+
+/* 360-degree light border wrapping */
+.dynamic-notch-wrapper--island .notch-light-border {
+  padding-top: 1.6px !important;
+  border-radius: inherit !important;
+}
+
+.dynamic-notch-wrapper--island .notch-stream-half,
+.dynamic-notch-wrapper--island .notch-stream--left,
+.dynamic-notch-wrapper--island .notch-stream--right {
+  border-radius: inherit !important;
+}
+
+/* Song thumbnail backdrop in island mode */
+.dynamic-notch-wrapper--island .notch-bg-cover {
+  border-radius: inherit !important;
+  -webkit-mask-image: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.25) 0%,
+    rgba(0, 0, 0, 0.6) 24px,
+    rgba(0, 0, 0, 1) 48px,
+    rgba(0, 0, 0, 1) 100%
+  ) !important;
+  mask-image: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.25) 0%,
+    rgba(0, 0, 0, 0.6) 24px,
+    rgba(0, 0, 0, 1) 48px,
+    rgba(0, 0, 0, 1) 100%
+  ) !important;
+}
+
+/* Interactive spring tactile feedback */
+.dynamic-notch-wrapper--island .dynamic-notch--compact:hover,
+.dynamic-notch-wrapper--island .dynamic-notch--activity:hover,
+.dynamic-notch-wrapper--island .dynamic-notch--bluetooth-compact:hover {
+  transform: scale(1.025) !important;
+  box-shadow: none !important;
+}
+
+.dynamic-notch-wrapper--island .dynamic-notch--compact:active,
+.dynamic-notch-wrapper--island .dynamic-notch--activity:active,
+.dynamic-notch-wrapper--island .dynamic-notch--bluetooth-compact:active {
+  transform: scale(0.975) !important;
+}
+
+
 
 
 

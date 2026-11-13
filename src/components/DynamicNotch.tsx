@@ -27,6 +27,25 @@ export const DynamicNotch: React.FC = () => {
     }
   });
 
+  const [displayStyle, setDisplayStyle] = useState<"notch" | "island">(() => {
+    try {
+      const saved = localStorage.getItem("notch_display_style");
+      return saved === "notch" ? "notch" : "island";
+    } catch {
+      return "island";
+    }
+  });
+
+  useEffect(() => {
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === "notch_display_style") {
+        setDisplayStyle(e.newValue === "notch" ? "notch" : "island");
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
+
   const systemMetrics = useSystemMetrics(true);
   const batteryPercent = systemMetrics?.battery_percent ?? 100;
   const isCharging = Boolean(systemMetrics?.is_charging);
@@ -171,6 +190,7 @@ export const DynamicNotch: React.FC = () => {
       if (key === "expandOnHover") setExpandOnHover(Boolean(value));
       if (key === "peekKey") setPeekKey(value);
       if (key === "mediaBgMode") setMediaBgMode(value);
+      if (key === "displayStyle") setDisplayStyle(value === "island" ? "island" : "notch");
     }).then((un) => {
       unlistenSettings = un;
     });
@@ -622,7 +642,7 @@ export const DynamicNotch: React.FC = () => {
       )}
 
       <div
-        className={`dynamic-notch-wrapper ${isPeekActive ? "dynamic-notch-wrapper--peek-through" : ""} ${isNotchHovered ? "dynamic-notch-wrapper--hovered" : ""}`}
+        className={`dynamic-notch-wrapper ${displayStyle === "island" ? "dynamic-notch-wrapper--island" : ""} ${isPeekActive ? "dynamic-notch-wrapper--peek-through" : ""} ${isNotchHovered ? "dynamic-notch-wrapper--hovered" : ""}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onWheel={handleWheel}

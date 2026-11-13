@@ -213,8 +213,8 @@ fn run_peek_watcher(app: AppHandle, session_id: u64) {
             if let Ok(guard) = NOTCH_CONFIG.lock() {
                 if let Some(c) = *guard {
                     let scale = c.scale_factor;
-                    let notch_w = (204.0 * scale).round() as i32;
-                    let notch_h = (34.0 * scale).round() as i32;
+                    let notch_w = (360.0 * scale).round() as i32;
+                    let notch_h = (68.0 * scale).round() as i32;
                     let notch_left = c.monitor_x + ((c.monitor_w - notch_w) / 2).max(0);
                     let notch_right = notch_left + notch_w;
                     let notch_top = c.monitor_y;
@@ -392,8 +392,8 @@ pub fn update_region() {
             // Compact Notch resting mode:
             // Centered top notch closely hugging the compact pill (~148-180px width + 8px ears + small buffer)
             // Leaves 100% of adjacent window tabs, minimize/maximize buttons, and desktop click-through!
-            let notch_w = (204.0 * scale).round() as i32;
-            let notch_h = (32.0 * scale).round() as i32;
+            let notch_w = (360.0 * scale).round() as i32;
+            let notch_h = (68.0 * scale).round() as i32;
             let notch_left = ((actual_w - notch_w) / 2).max(0);
             let notch_right = (notch_left + notch_w).min(actual_w);
 

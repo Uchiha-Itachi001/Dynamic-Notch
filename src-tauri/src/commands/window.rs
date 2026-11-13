@@ -143,4 +143,13 @@ pub fn open_settings_window(app_handle: tauri::AppHandle) -> Result<(), String> 
     window_manager::open_settings_window(&app_handle)
 }
 
+#[tauri::command]
+pub fn broadcast_setting_change(app_handle: tauri::AppHandle, key: String, value: serde_json::Value) {
+    use tauri::Emitter;
+    let _ = app_handle.emit("notch-settings-updated", serde_json::json!({
+        "key": key,
+        "value": value
+    }));
+}
+
 
