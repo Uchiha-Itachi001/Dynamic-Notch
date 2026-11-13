@@ -35,6 +35,8 @@ let optimisticPlayState: { target: boolean; expiresAt: number } | null = null;
 
 let lastKnownTrack: MediaSessionInfo | null = null;
 let lastKnownArt: string | undefined = undefined;
+let activeArtFetchKey = "";
+let artFetchAbortCtrl: AbortController | null = null;
 
 const GENERIC_NAMES = new Set([
   "spotify", "chrome", "google chrome", "edge", "microsoft edge",
@@ -45,6 +47,44 @@ const GENERIC_NAMES = new Set([
 function isGenericTitle(title?: string): boolean {
   if (!title || !title.trim()) return true;
   return GENERIC_NAMES.has(title.trim().toLowerCase());
+}
+
+function triggerBackgroundArtFetch(title: string, artist: string) {
+  if (!title || isGenericTitle(title)) return;
+  const key = `${title.toLowerCase()}__${artist.toLowerCase()}`;
+  if (activeArtFetchKey === key) return;
+
+  activeArtFetchKey = key;
+  if (artFetchAbortCtrl) {
+    artFetchAbortCtrl.abort();
+  }
+  artFetchAbortCtrl = new AbortController();
+  const signal = artFetchAbortCtrl.signal;
+
+  albumArtService.fetchAlbumArt(title, artist, signal).then((fetchedArt) => {
+    if (!fetchedArt || signal.aborted) return;
+
+    if (
+      currentState.liveMedia &&
+      currentState.liveMedia.title === title &&
+      !currentState.liveMedia.album_art_base64
+    ) {
+      lastKnownArt = fetchedArt;
+      const updatedMedia: MediaSessionInfo = {
+        ...currentState.liveMedia,
+        album_art_base64: fetchedArt,
+      };
+      if (lastKnownTrack && lastKnownTrack.title === title) {
+        lastKnownTrack.album_art_base64 = fetchedArt;
+      }
+      currentState = {
+        ...currentState,
+        liveMedia: updatedMedia,
+        dynamicTheme: albumArtService.getColorTheme(title, artist, fetchedArt),
+      };
+      notifyListeners();
+    }
+  });
 }
 
 function notifyListeners() {
@@ -103,8 +143,19 @@ function processIncomingSession(session: MediaSessionInfo | null) {
       art = lastKnownTrack.album_art_base64 || lastKnownArt;
     }
 
+    // Check high-speed albumArtService cache if still missing
+    if (!art && title) {
+      const cached = albumArtService.getCached(title, artist);
+      if (cached) {
+        art = cached;
+      }
+    }
+
     if (art) {
       lastKnownArt = art;
+      albumArtService.setCached(title, artist, art);
+    } else if (!isGenericTitle(title)) {
+      triggerBackgroundArtFetch(title, artist);
     }
 
     const duration = session.duration_sec || (session.duration_ms ? Math.floor(session.duration_ms / 1000) : 0) || (lastKnownTrack?.duration_sec ?? 0);

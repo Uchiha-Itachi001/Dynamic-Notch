@@ -68,8 +68,17 @@ struct SendThumb(windows::Storage::Streams::IRandomAccessStreamReference);
 unsafe impl Send for SendThumb {}
 unsafe impl Sync for SendThumb {}
 
+#[derive(Debug, Clone)]
+#[allow(dead_code)]
+pub struct ExtractedThumbnail {
+    pub base64: String,
+    pub is_app_icon: bool,
+    pub width: u32,
+    pub height: u32,
+}
+
 impl SendThumb {
-    pub fn extract(&self) -> Option<String> {
+    pub fn extract(&self) -> Option<ExtractedThumbnail> {
         extract_thumbnail_base64(&self.0)
     }
 }
@@ -78,6 +87,8 @@ struct ArtCacheEntry {
     title: String,
     artist: String,
     art_base64: Option<String>,
+    #[allow(dead_code)]
+    is_app_icon: bool,
 }
 
 static ART_CACHE: Mutex<Option<ArtCacheEntry>> = Mutex::new(None);
@@ -222,7 +233,69 @@ fn find_matching_browser_title(app_id_lower: &str) -> Option<String> {
     state.best_title
 }
 
-fn extract_thumbnail_base64(thumb_ref: &windows::Storage::Streams::IRandomAccessStreamReference) -> Option<String> {
+fn inspect_image_dimensions(bytes: &[u8]) -> (u32, u32, bool) {
+    let mut width = 0u32;
+    let mut height = 0u32;
+
+    // 1. PNG: 8-byte magic [137, 80, 78, 71, 13, 10, 26, 10], then chunk length (4), then IHDR (4), then width (4), height (4)
+    if bytes.len() >= 24 && bytes.starts_with(&[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]) {
+        if &bytes[12..16] == b"IHDR" {
+            width = u32::from_be_bytes([bytes[16], bytes[17], bytes[18], bytes[19]]);
+            height = u32::from_be_bytes([bytes[20], bytes[21], bytes[22], bytes[23]]);
+        }
+    }
+    // 2. JPEG: starts with [0xFF, 0xD8]
+    else if bytes.len() >= 4 && bytes[0] == 0xFF && bytes[1] == 0xD8 {
+        let mut idx = 2;
+        while idx + 9 < bytes.len() {
+            if bytes[idx] != 0xFF {
+                idx += 1;
+                continue;
+            }
+            let marker = bytes[idx + 1];
+            // SOF0 (0xC0), SOF1 (0xC1), SOF2 (0xC2)
+            if marker == 0xC0 || marker == 0xC1 || marker == 0xC2 {
+                height = u16::from_be_bytes([bytes[idx + 5], bytes[idx + 6]]) as u32;
+                width = u16::from_be_bytes([bytes[idx + 7], bytes[idx + 8]]) as u32;
+                break;
+            }
+            if idx + 4 > bytes.len() {
+                break;
+            }
+            let len = u16::from_be_bytes([bytes[idx + 2], bytes[idx + 3]]) as usize;
+            if len < 2 {
+                break;
+            }
+            idx += 2 + len;
+        }
+    }
+    // 3. WebP: RIFF ... WEBP
+    else if bytes.len() >= 30 && bytes.starts_with(b"RIFF") && &bytes[8..12] == b"WEBP" {
+        if &bytes[12..16] == b"VP8 " && bytes.len() >= 30 {
+            width = (u16::from_le_bytes([bytes[26], bytes[27]]) & 0x3FFF) as u32;
+            height = (u16::from_le_bytes([bytes[28], bytes[29]]) & 0x3FFF) as u32;
+        } else if &bytes[12..16] == b"VP8L" && bytes.len() >= 25 {
+            let b0 = bytes[21] as u32;
+            let b1 = bytes[22] as u32;
+            let b2 = bytes[23] as u32;
+            let b3 = bytes[24] as u32;
+            width = 1 + (((b1 & 0x3F) << 8) | b0);
+            height = 1 + ((((b3 & 0xF) << 10) | (b2 << 2) | (b1 >> 6)) & 0x3FFF);
+        } else if &bytes[12..16] == b"VP8X" && bytes.len() >= 30 {
+            width = 1 + (bytes[24] as u32 | ((bytes[25] as u32) << 8) | ((bytes[26] as u32) << 16));
+            height = 1 + (bytes[27] as u32 | ((bytes[28] as u32) << 8) | ((bytes[29] as u32) << 16));
+        }
+    }
+
+    // App icons in GSMTC are square and <= 128x128 (e.g. 16x16, 24x24, 32x32, 48x48, 64x64, 128x128).
+    // Legitimate video thumbnails or album covers are either 16:9, 4:3, or high-res square (>= 200x200).
+    let is_app_icon = (width > 0 && height > 0 && width == height && width <= 128)
+        || (width > 0 && height > 0 && width <= 64 && height <= 64);
+
+    (width, height, is_app_icon)
+}
+
+fn extract_thumbnail_base64(thumb_ref: &windows::Storage::Streams::IRandomAccessStreamReference) -> Option<ExtractedThumbnail> {
     use base64::engine::general_purpose::STANDARD as BASE64;
     use base64::Engine;
     use windows::Storage::Streams::DataReader;
@@ -251,7 +324,14 @@ fn extract_thumbnail_base64(thumb_ref: &windows::Storage::Streams::IRandomAccess
         "image/jpeg"
     };
 
-    Some(format!("data:{};base64,{}", mime, BASE64.encode(&bytes)))
+    let (width, height, is_app_icon) = inspect_image_dimensions(&bytes);
+
+    Some(ExtractedThumbnail {
+        base64: format!("data:{};base64,{}", mime, BASE64.encode(&bytes)),
+        is_app_icon,
+        width,
+        height,
+    })
 }
 
 /// Clean local file paths, file extensions, and formatting from raw song/video titles
@@ -783,21 +863,24 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
 
                 // Asynchronous, non-blocking thumbnail extraction on background thread without stalling UI
                 let mut album_art_base64: Option<String> = None;
-                let mut needs_fetch = false;
+                let mut needs_spawn = false;
 
                 if let Ok(art_guard) = ART_CACHE.lock() {
                     if let Some(ref entry) = *art_guard {
                         if entry.title == title && entry.artist == artist {
+                            // Already evaluated for this exact track
+                            // If it was an app icon, art_base64 is None (never passed to UI).
+                            // If it was a real thumbnail, art_base64 is Some(data_uri).
                             album_art_base64 = entry.art_base64.clone();
                         } else {
-                            needs_fetch = true;
+                            needs_spawn = true;
                         }
                     } else {
-                        needs_fetch = true;
+                        needs_spawn = true;
                     }
                 }
 
-                // If album art was not found in ART_CACHE, check LAST_VALID_TRACK
+                // If album art was not found in ART_CACHE, check LAST_VALID_TRACK for the same title
                 if album_art_base64.is_none() {
                     if let Ok(guard) = LAST_VALID_TRACK.lock() {
                         if let Some(ref last) = *guard {
@@ -808,7 +891,8 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
                     }
                 }
 
-                if needs_fetch || album_art_base64.is_none() {
+                // Spawn background extractor strictly once per new track
+                if needs_spawn {
                     if let Some(send_thumb) = send_thumb_opt {
                         let key = (title.clone(), artist.clone());
                         let mut should_spawn = false;
@@ -829,25 +913,45 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
                                 unsafe {
                                     let _ = CoInitializeEx(None, COINIT_MULTITHREADED);
                                 }
-                                let art = send_thumb.extract();
+                                let extracted_opt = send_thumb.extract();
+                                let (mut art_val, mut is_icon) = if let Some(extracted) = extracted_opt {
+                                    let is_icon = extracted.is_app_icon;
+                                    let val = if is_icon { None } else { Some(extracted.base64) };
+                                    (val, is_icon)
+                                } else {
+                                    (None, false)
+                                };
+
+                                // If initially Chromium sent an app icon, sleep 400ms once in background to let real video thumbnail load
+                                if is_icon {
+                                    std::thread::sleep(Duration::from_millis(400));
+                                    if let Some(second_try) = send_thumb.extract() {
+                                        if !second_try.is_app_icon {
+                                            art_val = Some(second_try.base64);
+                                            is_icon = false;
+                                        }
+                                    }
+                                }
+
                                 if let Ok(mut art_guard) = ART_CACHE.lock() {
                                     *art_guard = Some(ArtCacheEntry {
                                         title: t_clone.clone(),
                                         artist: a_clone.clone(),
-                                        art_base64: art.clone(),
+                                        art_base64: art_val.clone(),
+                                        is_app_icon: is_icon,
                                     });
                                 }
-                                if let Ok(mut last_guard) = LAST_VALID_TRACK.lock() {
-                                    if let Some(ref mut last) = *last_guard {
-                                        if last.title == t_clone {
-                                            last.album_art_base64 = art.clone();
+
+                                if !is_icon && art_val.is_some() {
+                                    if let Ok(mut last_guard) = LAST_VALID_TRACK.lock() {
+                                        if let Some(ref mut last) = *last_guard {
+                                            if last.title == t_clone {
+                                                last.album_art_base64 = art_val;
+                                            }
                                         }
                                     }
+                                    notify_media_changed();
                                 }
-                                if let Ok(mut fetch_guard) = ART_FETCHING_KEY.lock() {
-                                    *fetch_guard = None;
-                                }
-                                notify_media_changed();
                             });
                         }
                     }
@@ -916,6 +1020,9 @@ pub fn get_current_media_session() -> Option<MediaSessionInfo> {
             *guard = None;
         }
         if let Ok(mut guard) = ART_CACHE.lock() {
+            *guard = None;
+        }
+        if let Ok(mut guard) = ART_FETCHING_KEY.lock() {
             *guard = None;
         }
         cache.active_session = None;
