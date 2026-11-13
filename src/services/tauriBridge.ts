@@ -181,6 +181,14 @@ export const tauriBridge = {
     }
   },
 
+  openSettingsWindow: async (): Promise<void> => {
+    try {
+      await invoke("open_settings_window");
+    } catch (e) {
+      console.error("openSettingsWindow error:", e);
+    }
+  },
+
   powerAction: async (action: "lock" | "sleep" | "restart" | "shutdown"): Promise<void> => {
     try {
       await invoke("power_action", { action });

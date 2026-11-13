@@ -6,3 +6,4 @@ pub mod system_events;
 pub mod startup;
 pub mod window_manager;
 pub mod fullscreen;
+pub mod tray;

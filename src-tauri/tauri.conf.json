@@ -23,6 +23,21 @@
         "resizable": false,
         "shadow": false,
         "visible": true
+      },
+      {
+        "label": "settings",
+        "title": "Notch Settings",
+        "url": "index.html#settings",
+        "width": 840,
+        "height": 580,
+        "decorations": true,
+        "transparent": false,
+        "alwaysOnTop": false,
+        "skipTaskbar": false,
+        "resizable": false,
+        "shadow": true,
+        "center": true,
+        "visible": false
       }
     ],
     "security": {

@@ -138,3 +138,9 @@ pub fn exit_app(app_handle: tauri::AppHandle) {
     app_handle.exit(0);
 }
 
+#[tauri::command]
+pub fn open_settings_window(app_handle: tauri::AppHandle) -> Result<(), String> {
+    window_manager::open_settings_window(&app_handle)
+}
+
+

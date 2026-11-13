@@ -403,4 +403,34 @@ pub fn update_region() {
     }
 }
 
+pub fn open_settings_window(app: &AppHandle) -> Result<(), String> {
+    use tauri::Manager;
+    if let Some(win) = app.get_webview_window("settings") {
+        let _ = win.show();
+        let _ = win.unminimize();
+        let _ = win.set_focus();
+        Ok(())
+    } else {
+        let app_handle = app.clone();
+        let _ = app.run_on_main_thread(move || {
+            if let Ok(win) = tauri::WebviewWindowBuilder::new(
+                &app_handle,
+                "settings",
+                tauri::WebviewUrl::App("index.html#settings".into()),
+            )
+            .title("Notch Settings")
+            .inner_size(840.0, 580.0)
+            .resizable(false)
+            .center()
+            .decorations(true)
+            .visible(true)
+            .build() {
+                let _ = win.set_focus();
+            }
+        });
+        Ok(())
+    }
+}
+
+
 

@@ -50,8 +50,21 @@ pub fn run() {
             commands::window::open_windows_settings,
             commands::window::power_action,
             commands::window::exit_app,
+            commands::window::open_settings_window,
         ])
+        .on_window_event(|window, event| {
+            if window.label() == "settings" {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+        })
         .setup(|app| {
+            if let Err(e) = services::tray::setup_tray(app) {
+                eprintln!("[notch] Could not setup system tray icon: {e}");
+            }
+
             let window = app.get_webview_window("main").unwrap();
 
             if let Err(error) = services::startup::ensure_auto_start() {

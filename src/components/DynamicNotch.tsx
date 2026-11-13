@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { listen } from "@tauri-apps/api/event";
 import { CalendarDays, LayoutDashboard, Music2, Volume2 } from "lucide-react";
 import { useSystemMetrics } from "../hooks/useSystemMetrics";
 import { useMediaSession } from "../hooks/useMediaSession";
@@ -9,7 +10,6 @@ import { tauriBridge } from "../services/tauriBridge";
 import { calcNetPercent, formatBytes, formatRate, formatTime, getBatteryColor, getTrackColor } from "../services/notchFormatters";
 import { NotchOsd } from "./NotchOsd";
 import { CalendarPanel } from "./CalendarPanel";
-import { SettingsPanel } from "./SettingsPanel";
 
 /* ─── Priority ordering for OSD states ──────────────────────────────────────
    Higher priority states take over the notch, lower ones queue/dismiss.
@@ -87,7 +87,7 @@ export const DynamicNotch: React.FC = () => {
   }, []);
 
   // Core expanded-card state (persistent, user-invoked)
-  const [expandedType, setExpandedType] = useState<"media" | "settings" | "app-settings" | "calendar" | "bluetooth" | null>(null);
+  const [expandedType, setExpandedType] = useState<"media" | "settings" | "calendar" | "bluetooth" | null>(null);
   const [splitViewMode, setSplitViewMode] = useState<"media_main" | "bt_main">("media_main");
   const [hoveredMetric, setHoveredMetric] = useState<"cpu" | "ram" | "down" | "up" | null>(null);
 
@@ -163,6 +163,23 @@ export const DynamicNotch: React.FC = () => {
     };
   }, []);
 
+  // Sync settings when modified from the dedicated Settings window
+  useEffect(() => {
+    let unlistenSettings: (() => void) | null = null;
+    listen<{ key: string; value: any }>("notch-settings-updated", (event) => {
+      const { key, value } = event.payload;
+      if (key === "expandOnHover") setExpandOnHover(Boolean(value));
+      if (key === "peekKey") setPeekKey(value);
+      if (key === "mediaBgMode") setMediaBgMode(value);
+    }).then((un) => {
+      unlistenSettings = un;
+    });
+
+    return () => {
+      if (unlistenSettings) unlistenSettings();
+    };
+  }, []);
+
   useEffect(() => {
     tauriBridge.setNotchExpanded(expandedType !== null);
   }, [expandedType]);
@@ -194,12 +211,10 @@ export const DynamicNotch: React.FC = () => {
     setExpandedType("settings");
   };
 
-  const handleExpandAppSettings = (e?: React.MouseEvent) => {
+  const handleOpenSettingsWindow = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    if (collapseTimeoutRef.current) { window.clearTimeout(collapseTimeoutRef.current); collapseTimeoutRef.current = null; }
-    setIsHoverExpanded(false);
-    tauriBridge.setNotchExpanded(true);
-    setExpandedType("app-settings");
+    handleCollapse();
+    tauriBridge.openSettingsWindow().catch(console.error);
   };
 
   const handleExpandBluetooth = (e?: React.MouseEvent) => {
@@ -610,7 +625,7 @@ export const DynamicNotch: React.FC = () => {
         className={`dynamic-notch-wrapper ${isPeekActive ? "dynamic-notch-wrapper--peek-through" : ""} ${isNotchHovered ? "dynamic-notch-wrapper--hovered" : ""}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onWheel={expandedType === "app-settings" ? undefined : handleWheel}
+        onWheel={handleWheel}
       >
 
         <NotchOsd
@@ -725,50 +740,7 @@ export const DynamicNotch: React.FC = () => {
           </div>
         )}
 
-        {/* ── CASE 2: App Settings ── */}
-        {expandedType === "app-settings" && (
-          <div key="app-settings" className="dynamic-notch dynamic-notch--app-settings"
-            onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
-            <div className="notch-ear notch-ear--left" /><div className="notch-ear notch-ear--right" />
-            <div className="app-settings-card">
-              <div className="apple-full-header">
-                <div className="apple-full-actions">
-                    <div className="apple-header-nav">
-                      {hasMediaSession && (
-                        <button type="button" className="apple-action-icon apple-action-icon--music" onClick={() => setExpandedType("media")} aria-label={`Now Playing: ${activeTitle}`}>
-                          <Music2 size={12} strokeWidth={2.2} />
-                        </button>
-                      )}
-                      <button type="button" className="apple-action-icon apple-dashboard-action" onClick={() => setExpandedType("settings")} data-tooltip="Dashboard" aria-label="Dashboard">
-                        <LayoutDashboard size={12} strokeWidth={2.1} />
-                      </button>
-                      <button type="button" className="apple-action-icon apple-calendar-action" onClick={() => setExpandedType("calendar")} data-tooltip="Calendar" aria-label="Calendar">
-                        <CalendarDays size={12} strokeWidth={2.1} />
-                      </button>
-                    </div>
-                    <div className="apple-header-controls">
-                  <button type="button" className="apple-action-icon apple-settings-action apple-settings-action--active" onClick={handleExpandAppSettings} data-tooltip="Settings" aria-label="Settings">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1-1.82l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" /></svg>
-                  </button>
-                  <button type="button" className={`apple-action-pill ${expandOnHover ? "apple-action-pill--on" : ""}`} onClick={() => setExpandOnHover((value) => !value)} aria-label="Hover Expand"><span className="apple-action-dot" /><span>HOVER</span></button>
-                  <button type="button" className="apple-exit-icon" onClick={() => tauriBridge.exitApp()} data-tooltip="Exit App" aria-label="Exit App"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0" /><line x1="12" y1="2" x2="12" y2="12" /></svg></button>
-                    </div>
-                </div>
-              </div>
-
-              <SettingsPanel
-                expandOnHover={expandOnHover}
-                onExpandOnHoverChange={() => setExpandOnHover((value) => !value)}
-                mediaBgMode={mediaBgMode}
-                onMediaBgModeChange={setMediaBgMode}
-                peekKey={peekKey}
-                onPeekKeyChange={setPeekKey}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* ── CASE 3: Expanded System Stats / Settings ── */}
+        {/* ── CASE 2: Expanded System Stats / Dashboard ── */}
         {expandedType === "settings" && (() => {
           const netType = systemMetrics?.net_type?.toLowerCase() ?? "wifi";
           const isDisconnected = netType === "disconnected" || netType === "none";
@@ -802,7 +774,7 @@ export const DynamicNotch: React.FC = () => {
                       </button>
                     </div>
                     <div className="apple-header-controls">
-                    <button type="button" className="apple-action-icon apple-settings-action" onClick={handleExpandAppSettings} data-tooltip="Settings" aria-label="Settings">
+                    <button type="button" className="apple-action-icon apple-settings-action" onClick={handleOpenSettingsWindow} data-tooltip="Settings" aria-label="Settings">
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="12" cy="12" r="3" />
                         <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a2 2 0 0 1 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />

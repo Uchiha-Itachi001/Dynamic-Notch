@@ -1,0 +1,438 @@
+/* ─── Apple / macOS Inspired Settings Window Styles ───────────────────────── */
+
+:root {
+  --settings-bg: #0c0d11;
+  --settings-sidebar-bg: #111218;
+  --settings-card-bg: rgba(25, 27, 34, 0.65);
+  --settings-card-border: rgba(255, 255, 255, 0.08);
+  --settings-card-hover: rgba(35, 38, 48, 0.75);
+  --settings-text-primary: #f4f4f5;
+  --settings-text-secondary: #9ca3af;
+  --settings-text-muted: #6b7280;
+  --settings-accent-blue: #3b82f6;
+  --settings-accent-green: #10b981;
+  --settings-font: -apple-system, BlinkMacSystemFont, "Segoe UI Variable Display", "Segoe UI", system-ui, sans-serif;
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  user-select: none;
+  font-family: var(--settings-font);
+  background: var(--settings-bg);
+  color: var(--settings-text-primary);
+}
+
+.settings-window-container {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  box-sizing: border-box;
+  background: var(--settings-bg);
+  overflow: hidden;
+}
+
+/* ── Left Navigation Sidebar ──────────────────────────────────────────────── */
+
+.settings-sidebar {
+  width: 250px;
+  min-width: 250px;
+  background: var(--settings-sidebar-bg);
+  border-right: 1px solid var(--settings-card-border);
+  display: flex;
+  flex-direction: column;
+  padding: 18px 14px 16px;
+  box-sizing: border-box;
+}
+
+.settings-sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 4px 8px 18px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 14px;
+}
+
+.settings-app-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #6366f1, #3b82f6, #ec4899);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 19px;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  flex-shrink: 0;
+}
+
+.settings-app-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.settings-app-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+}
+
+.settings-app-version {
+  font-size: 11px;
+  font-weight: 600;
+  color: #a1a1aa;
+}
+
+.settings-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  width: 100%;
+  text-align: left;
+  transition: all 0.16s ease;
+  font-family: inherit;
+}
+
+.settings-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.settings-nav-item--active {
+  background: rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+.settings-nav-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #e4e4e7;
+  letter-spacing: -0.15px;
+}
+
+.settings-nav-item--active .settings-nav-label {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.settings-sidebar-footer {
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-quick-pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 11.5px;
+  color: #a1a1aa;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.settings-quick-pill:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+/* ── Vibrant Gradient Icon Squircles ──────────────────────────────────────── */
+
+.settings-icon-squircle {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.settings-icon-squircle--large {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}
+
+/* Gradients for each category */
+.gradient-blue {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.gradient-green {
+  background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+}
+
+.gradient-pink {
+  background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);
+}
+
+.gradient-orange {
+  background: linear-gradient(135deg, #f97316 0%, #c2410c 100%);
+}
+
+.gradient-purple {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+}
+
+.gradient-cyan {
+  background: linear-gradient(135deg, #06b6d4 0%, #0e7490 100%);
+}
+
+.gradient-red {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+}
+
+/* ── Right Content Area ───────────────────────────────────────────────────── */
+
+.settings-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 24px 30px 32px;
+  box-sizing: border-box;
+}
+
+.settings-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.settings-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-content::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 3px;
+}
+
+.settings-header-section {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.settings-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.settings-category-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.4px;
+  margin: 0;
+}
+
+.settings-category-desc {
+  font-size: 12.5px;
+  color: var(--settings-text-secondary);
+  margin: 0;
+}
+
+/* ── Settings Section Group & Cards ───────────────────────────────────────── */
+
+.settings-card-group {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.settings-card {
+  background: var(--settings-card-bg);
+  border: 1px solid var(--settings-card-border);
+  border-radius: 14px;
+  backdrop-filter: blur(16px);
+  overflow: hidden;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 13px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  gap: 16px;
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row-left {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5px;
+}
+
+.settings-row-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: -0.15px;
+}
+
+.settings-row-desc {
+  font-size: 11.5px;
+  color: var(--settings-text-secondary);
+  line-height: 1.35;
+}
+
+.settings-row-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+/* ── Form Controls (Switches, Segmented, Buttons) ─────────────────────────── */
+
+/* iOS Toggle Switch */
+.settings-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  outline: none;
+  padding: 0;
+}
+
+.settings-switch--active {
+  background: #3b82f6 !important;
+  border-color: rgba(59, 130, 246, 0.5);
+}
+
+.settings-switch-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: #ffffff;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.settings-switch--active .settings-switch-thumb {
+  transform: translateX(20px);
+}
+
+/* Segmented Control */
+.settings-segmented {
+  display: flex;
+  background: rgba(0, 0, 0, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 2.5px;
+  gap: 2px;
+}
+
+.settings-segmented-btn {
+  background: transparent;
+  border: none;
+  color: #a1a1aa;
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.settings-segmented-btn:hover {
+  color: #ffffff;
+}
+
+.settings-segmented-btn--active {
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #ffffff !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Buttons */
+.settings-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: inherit;
+}
+
+.settings-btn:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.settings-btn--danger {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+
+.settings-btn--danger:hover {
+  background: rgba(239, 68, 68, 0.28);
+  color: #ffffff;
+}
+
+.settings-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(16, 185, 129, 0.18);
+  border: 1px solid rgba(16, 185, 129, 0.32);
+  color: #34d399;
+}
+
