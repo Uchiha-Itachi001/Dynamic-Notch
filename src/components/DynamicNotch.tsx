@@ -37,7 +37,9 @@ export const DynamicNotch: React.FC = () => {
   });
 
   const [morphAnimation, setMorphAnimation] = useState<"to-island" | "to-notch" | null>(null);
+  const [justMorphed, setJustMorphed] = useState(false);
   const morphTimeoutRef = useRef<number | null>(null);
+  const justMorphedTimeoutRef = useRef<number | null>(null);
   const activeTargetRef = useRef<"notch" | "island">(displayStyle);
 
   const transitionToStyle = useCallback((targetStyle: "notch" | "island") => {
@@ -58,7 +60,16 @@ export const DynamicNotch: React.FC = () => {
     morphTimeoutRef.current = window.setTimeout(() => {
       setDisplayStyle(targetStyle);
       setMorphAnimation(null);
+      setJustMorphed(true);
       morphTimeoutRef.current = null;
+
+      if (justMorphedTimeoutRef.current) {
+        window.clearTimeout(justMorphedTimeoutRef.current);
+      }
+      justMorphedTimeoutRef.current = window.setTimeout(() => {
+        setJustMorphed(false);
+        justMorphedTimeoutRef.current = null;
+      }, 350);
     }, 720);
   }, []);
 
@@ -66,6 +77,9 @@ export const DynamicNotch: React.FC = () => {
     return () => {
       if (morphTimeoutRef.current) {
         window.clearTimeout(morphTimeoutRef.current);
+      }
+      if (justMorphedTimeoutRef.current) {
+        window.clearTimeout(justMorphedTimeoutRef.current);
       }
     };
   }, []);
@@ -687,7 +701,7 @@ export const DynamicNotch: React.FC = () => {
             : ""
         } ${isPeekActive ? "dynamic-notch-wrapper--peek-through" : ""} ${
           isNotchHovered ? "dynamic-notch-wrapper--hovered" : ""
-        }`}
+        } ${justMorphed ? "dynamic-notch-wrapper--no-bounce" : ""}`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onWheel={handleWheel}
@@ -1118,7 +1132,7 @@ export const DynamicNotch: React.FC = () => {
 
         {/* ── CASE 4: Multi-Activity Split (Media + BT both active) ── */}
         {showMultiSplit && (
-          <div className="notch-split-container">
+          <div key="split-multi" className="notch-split-container">
             <div className={`dynamic-notch notch-split-main ${splitViewMode === "media_main" ? "notch-split-main--media" : "notch-split-main--bluetooth"}`}
               onClick={handleMainPillClick}
               onMouseEnter={() => scheduleHoverExpand(splitViewMode === "media_main" ? "media" : "bluetooth")}
@@ -1224,7 +1238,7 @@ export const DynamicNotch: React.FC = () => {
 
         {/* ── CASE 5: Dual Split (Clock+Battery left / BT right, no media) ── */}
         {showDualSplit && (
-          <div className="notch-split-container">
+          <div key="split-dual" className="notch-split-container">
             <div className="dynamic-notch notch-split-main notch-split-main--default"
               onClick={handleExpandSettings}
               onMouseEnter={() => scheduleHoverExpand("settings")}

@@ -1,5 +1,53 @@
 /* ─── Authentic DynamicWin V2 Dynamic Notch / Island Design ────────────────── */
 
+:root {
+  --notch-duration-fast: 0.18s;
+  --notch-duration-bounce: 0.44s;
+  --notch-duration-expand: 0.42s;
+  --notch-ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --notch-ease-spring-bouncy: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --notch-ease-spring-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes notchPillBounce {
+  0% {
+    transform: scale3d(0.78, 0.65, 1);
+    opacity: 0.2;
+  }
+  48% {
+    transform: scale3d(1.055, 1.07, 1);
+    opacity: 1;
+  }
+  74% {
+    transform: scale3d(0.985, 0.98, 1);
+  }
+  88% {
+    transform: scale3d(1.008, 1.006, 1);
+  }
+  100% {
+    transform: scale3d(1, 1, 1);
+    opacity: 1;
+  }
+}
+
+@keyframes notchElementPop {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.18);
+    opacity: 1;
+  }
+  82% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 .dynamic-notch-wrapper {
   position: fixed;
   top: 0;
@@ -374,7 +422,7 @@
   padding: 0 12px;
   border-bottom-left-radius: 14px;
   border-bottom-right-radius: 14px;
-  animation: none !important;
+  animation: notchPillBounce var(--notch-duration-bounce, 0.44s) var(--notch-ease-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275)) both;
 }
 
 .notch-compact-layout {
@@ -385,7 +433,6 @@
   justify-content: space-between;
   width: 100%;
   gap: 12px;
-  animation: none !important;
 }
 
 .notch-compact-left {
@@ -488,7 +535,7 @@
   padding: 0 9px;
   border-bottom-left-radius: 14px;
   border-bottom-right-radius: 14px;
-  animation: none !important;
+  animation: notchPillBounce var(--notch-duration-bounce, 0.44s) var(--notch-ease-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275)) both;
 }
 
 .notch-activity-layout {
@@ -500,7 +547,6 @@
   width: 100%;
   gap: 6px;
   padding: 0 1px;
-  animation: none !important;
 }
 
 .notch-activity-left {
@@ -522,7 +568,7 @@
   flex-shrink: 0;
   overflow: hidden;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
-  animation: none !important;
+  animation: notchElementPop 0.36s var(--notch-ease-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275)) both;
 }
 
 .notch-album-thumb img {
@@ -632,7 +678,7 @@
   height: 26px;
   border-bottom-left-radius: 14px;
   border-bottom-right-radius: 14px;
-  animation: none !important;
+  animation: notchPillBounce var(--notch-duration-bounce, 0.44s) var(--notch-ease-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275)) both;
   transition: all var(--glace-duration-base) var(--glace-ease-spring) !important;
 }
 
@@ -720,7 +766,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  animation: none !important;
+  animation: notchPillBounce var(--notch-duration-bounce, 0.44s) var(--notch-ease-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275)) both;
   transition: all var(--glace-duration-base) var(--glace-ease-spring) !important;
 }
 
@@ -955,20 +1001,18 @@
   animation: notch-element-spring 0.44s cubic-bezier(0.34, 1.56, 0.64, 1) 0.14s both;
 }
 
-/* Compact notch activity inner elements remain stable without redundant entrance flash */
-.dynamic-notch--activity,
-.dynamic-notch--compact,
-.notch-activity-layout,
-.notch-compact-layout,
-.notch-album-thumb,
-.dynamic-notch--activity .notch-activity-left,
-.dynamic-notch--activity .notch-activity-middle,
-.dynamic-notch--activity .notch-activity-right,
-.dynamic-notch--compact .notch-compact-left,
-.dynamic-notch--compact .notch-compact-right {
-  opacity: 1;
-  transform: none;
+/* Suppress entrance bounce and transition snaps only during morph transition settle */
+.dynamic-notch-wrapper--no-bounce,
+.dynamic-notch-wrapper--no-bounce .dynamic-notch,
+.dynamic-notch-wrapper--no-bounce .dynamic-notch--activity,
+.dynamic-notch-wrapper--no-bounce .dynamic-notch--compact,
+.dynamic-notch-wrapper--no-bounce .notch-split-main,
+.dynamic-notch-wrapper--no-bounce .notch-split-secondary,
+.dynamic-notch-wrapper--no-bounce .notch-album-thumb,
+.dynamic-notch-wrapper--no-bounce .notch-album-thumb img,
+.dynamic-notch-wrapper--no-bounce .notch-ear {
   animation: none !important;
+  transition: none !important;
 }
 
 /* Staggered spring bounce on active split notch */
@@ -4675,7 +4719,8 @@
    ══════════════════════════════════════════════════════════════════════════════ */
 
 .dynamic-notch-wrapper--island {
-  top: 14px !important;
+  top: 0 !important;
+  transform: translateX(-50%) translateY(14px) !important;
   transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
               transform 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
 }
@@ -4687,6 +4732,7 @@
 
 /* 360-degree border radius and zero shadow */
 .dynamic-notch-wrapper--island .dynamic-notch {
+  transform-origin: center center !important;
   border-top-left-radius: 18px !important;
   border-top-right-radius: 18px !important;
   border-bottom-left-radius: 18px !important;
@@ -4709,12 +4755,14 @@
 .dynamic-notch-wrapper--island .dynamic-notch--compact {
   min-width: 175px !important;
   max-width: 215px !important;
+  animation: islandPillBounce var(--notch-duration-bounce, 0.44s) var(--glace-ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both !important;
 }
 
 .dynamic-notch-wrapper--island .dynamic-notch--activity {
   min-width: 205px !important;
   max-width: 255px !important;
   padding: 0 12px 0 7px !important;
+  animation: islandPillBounce var(--notch-duration-bounce, 0.44s) var(--glace-ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both !important;
 }
 
 .dynamic-notch-wrapper--island .notch-split-main--media {
@@ -4726,6 +4774,28 @@
   height: 23px !important;
   border-radius: 50% !important;
   overflow: hidden !important;
+  animation: notchElementPop 0.36s var(--notch-ease-spring, cubic-bezier(0.175, 0.885, 0.32, 1.275)) both !important;
+}
+
+@keyframes islandPillBounce {
+  0% {
+    transform: scale3d(0.80, 0.72, 1);
+    opacity: 0.25;
+  }
+  48% {
+    transform: scale3d(1.048, 1.055, 1);
+    opacity: 1;
+  }
+  74% {
+    transform: scale3d(0.988, 0.985, 1);
+  }
+  88% {
+    transform: scale3d(1.006, 1.004, 1);
+  }
+  100% {
+    transform: scale3d(1, 1, 1);
+    opacity: 1;
+  }
 }
 
 .dynamic-notch-wrapper--island .notch-album-thumb img {
@@ -4769,6 +4839,7 @@
   padding: 0 14px !important;
   border-radius: 18px !important;
   box-shadow: none !important;
+  animation: islandPillBounce var(--notch-duration-bounce, 0.44s) var(--glace-ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both !important;
 }
 
 .dynamic-notch-wrapper--island .notch-split-secondary {
@@ -4781,6 +4852,7 @@
   align-items: center !important;
   justify-content: center !important;
   box-shadow: none !important;
+  animation: islandPillBounce var(--notch-duration-bounce, 0.44s) var(--glace-ease-spring, cubic-bezier(0.34, 1.56, 0.64, 1)) both !important;
 }
 
 /* 360-degree light border wrapping */
@@ -4885,11 +4957,14 @@
 }
 
 @keyframes morphWrapperNotchToIsland {
-  0%, 24% {
+  0%, 16% {
     transform: translateX(-50%) translateY(0);
-    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+    animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  50%, 100% {
+  46% {
+    transform: translateX(-50%) translateY(14px);
+  }
+  100% {
     transform: translateX(-50%) translateY(14px);
   }
 }
@@ -4923,32 +4998,33 @@
     padding: 0 9px;
     animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  12% {
-    border-top-left-radius: 18px;
-    border-top-right-radius: 18px;
-    border-bottom-left-radius: 18px;
-    border-bottom-right-radius: 18px;
-    padding: 0 4px;
-  }
-  26% {
-    width: auto;
+  16% {
+    width: 35px;
     min-width: 35px;
     max-width: 35px;
     height: 35px;
     border-radius: 50%;
     padding: 0;
+  }
+  44% {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    padding: 0;
+    animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+  78% {
+    width: auto;
+    min-width: 210px;
+    max-width: 262px;
+    height: 35px;
+    border-radius: 18px;
+    padding: 0 12px 0 7px;
     animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
-  50% {
-    width: auto;
-    min-width: 35px;
-    max-width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    padding: 0;
-    animation-timing-function: cubic-bezier(0.28, 1.22, 0.55, 1);
-  }
-  100% {
+  90%, 100% {
     width: auto;
     min-width: 205px;
     max-width: 255px;
@@ -4976,32 +5052,33 @@
     padding: 0 12px;
     animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  12% {
-    border-top-left-radius: 18px;
-    border-top-right-radius: 18px;
-    border-bottom-left-radius: 18px;
-    border-bottom-right-radius: 18px;
-    padding: 0 4px;
-  }
-  26% {
-    width: auto;
+  16% {
+    width: 35px;
     min-width: 35px;
     max-width: 35px;
     height: 35px;
     border-radius: 50%;
     padding: 0;
+  }
+  44% {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    padding: 0;
+    animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+  78% {
+    width: auto;
+    min-width: 180px;
+    max-width: 220px;
+    height: 35px;
+    border-radius: 18px;
+    padding: 0 14px;
     animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
-  50% {
-    width: auto;
-    min-width: 35px;
-    max-width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    padding: 0;
-    animation-timing-function: cubic-bezier(0.28, 1.22, 0.55, 1);
-  }
-  100% {
+  90%, 100% {
     width: auto;
     min-width: 175px;
     max-width: 215px;
@@ -5022,7 +5099,7 @@
     transform: scale(1);
     animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  14%, 100% {
+  16%, 100% {
     opacity: 0;
     transform: scale(0.3);
     pointer-events: none;
@@ -5042,16 +5119,16 @@
     transform: scale(1);
     animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  16% {
+  15% {
     opacity: 0;
     transform: scale(0.75);
   }
-  50% {
+  46% {
     opacity: 0;
     transform: scale(0.85);
     animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
-  100% {
+  82%, 100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -5067,24 +5144,24 @@
 }
 
 @keyframes morphThumbSquircleToCircle {
-  0% {
-    width: 15px;
-    height: 15px;
-    border-radius: 3.5px;
-    animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
-  }
-  16% {
+  0%, 16% {
     width: 15px;
     height: 15px;
     border-radius: 3.5px;
   }
-  50% {
+  44% {
     width: 15px;
     height: 15px;
     border-radius: 50%;
-    animation-timing-function: cubic-bezier(0.28, 1.22, 0.55, 1);
+    animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1.2);
   }
-  100% {
+  78% {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  90%, 100% {
     width: 23px;
     height: 23px;
     border-radius: 50%;
@@ -5104,11 +5181,14 @@
 }
 
 @keyframes morphWrapperIslandToNotch {
-  0%, 18% {
+  0%, 16% {
     transform: translateX(-50%) translateY(14px);
-    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+    animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  50%, 100% {
+  46% {
+    transform: translateX(-50%) translateY(0);
+  }
+  100% {
     transform: translateX(-50%) translateY(0);
   }
 }
@@ -5139,23 +5219,24 @@
     padding: 0 12px 0 7px;
     animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  18% {
+  16% {
     width: 35px;
     min-width: 35px;
     max-width: 35px;
     height: 35px;
     border-radius: 50%;
     padding: 0;
+  }
+  44% {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    padding: 0;
+    animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1.2);
   }
   48% {
-    width: 35px;
-    min-width: 35px;
-    max-width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    padding: 0;
-  }
-  50% {
     width: 35px;
     min-width: 35px;
     max-width: 35px;
@@ -5165,9 +5246,20 @@
     border-bottom-left-radius: 14px;
     border-bottom-right-radius: 14px;
     padding: 0 9px;
-    animation-timing-function: cubic-bezier(0.28, 1.20, 0.55, 1);
   }
-  100% {
+  78% {
+    width: auto;
+    min-width: 154px;
+    max-width: 188px;
+    height: 26px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    padding: 0 9px;
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  90%, 100% {
     width: auto;
     min-width: 150px;
     max-width: 185px;
@@ -5195,23 +5287,24 @@
     padding: 0 14px;
     animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
   }
-  18% {
+  16% {
     width: 35px;
     min-width: 35px;
     max-width: 35px;
     height: 35px;
     border-radius: 50%;
     padding: 0;
+  }
+  44% {
+    width: 35px;
+    min-width: 35px;
+    max-width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    padding: 0;
+    animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1.2);
   }
   48% {
-    width: 35px;
-    min-width: 35px;
-    max-width: 35px;
-    height: 35px;
-    border-radius: 50%;
-    padding: 0;
-  }
-  50% {
     width: 35px;
     min-width: 35px;
     max-width: 35px;
@@ -5221,9 +5314,20 @@
     border-bottom-left-radius: 14px;
     border-bottom-right-radius: 14px;
     padding: 0 12px;
-    animation-timing-function: cubic-bezier(0.28, 1.20, 0.55, 1);
   }
-  100% {
+  78% {
+    width: auto;
+    min-width: 152px;
+    max-width: 185px;
+    height: 26px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 14px;
+    border-bottom-right-radius: 14px;
+    padding: 0 12px;
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  90%, 100% {
     width: auto;
     min-width: 148px;
     max-width: 180px;
@@ -5236,12 +5340,12 @@
   }
 }
 
-/* Notch ears fade in with expansion as circle touches top bezel */
+/* Notch ears expand and fade in smoothly in parallel with circle reaching top bezel */
 .dynamic-notch-wrapper--morph-to-notch .notch-ear {
   display: block !important;
   opacity: 0;
   pointer-events: none;
-  animation: morphEarsFadeIn 720ms ease forwards !important;
+  animation: morphEarsFadeIn 720ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 .dynamic-notch-wrapper--morph-to-notch .notch-ear--left {
@@ -5253,18 +5357,24 @@
 }
 
 @keyframes morphEarsFadeIn {
-  0%, 48% {
+  0%, 44% {
     opacity: 0;
-    transform: scale(0.3);
+    transform: scale(0.2);
     pointer-events: none;
   }
-  50% {
-    opacity: 0;
-    transform: scale(0.5);
+  48% {
+    opacity: 0.2;
+    transform: scale(0.6);
+    pointer-events: none;
+    animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+  75% {
+    opacity: 1;
+    transform: scale(1.08);
     pointer-events: none;
     animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
-  100% {
+  90%, 100% {
     opacity: 1;
     transform: scale(1);
     pointer-events: none;
@@ -5288,20 +5398,20 @@
     opacity: 0;
     transform: scale(0.75);
   }
-  50% {
+  46% {
     opacity: 0;
     transform: scale(0.85);
     animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
-  100% {
+  82%, 100% {
     opacity: 1;
     transform: scale(1);
   }
 }
 
-/* Album thumbnail: circle 23px to squircle 15px */
+/* Album thumbnail: circle 23px to squircle 15px in parallel */
 .dynamic-notch-wrapper--morph-to-notch .notch-album-thumb {
-  animation: morphThumbCircleToSquircle 720ms ease forwards !important;
+  animation: morphThumbCircleToSquircle 720ms cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
 .dynamic-notch-wrapper--morph-to-notch .notch-album-thumb img {
@@ -5309,24 +5419,24 @@
 }
 
 @keyframes morphThumbCircleToSquircle {
-  0% {
-    width: 23px;
-    height: 23px;
-    border-radius: 50%;
-    animation-timing-function: cubic-bezier(0.38, 0, 0.24, 1);
-  }
-  16% {
+  0%, 16% {
     width: 23px;
     height: 23px;
     border-radius: 50%;
   }
-  50% {
-    width: 15px;
-    height: 15px;
+  44% {
+    width: 23px;
+    height: 23px;
+    border-radius: 50%;
+    animation-timing-function: cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+  72% {
+    width: 14.5px;
+    height: 14.5px;
     border-radius: 3.5px;
-    animation-timing-function: cubic-bezier(0.28, 1.20, 0.55, 1);
+    animation-timing-function: cubic-bezier(0.25, 1, 0.5, 1);
   }
-  100% {
+  88%, 100% {
     width: 15px;
     height: 15px;
     border-radius: 3.5px;
